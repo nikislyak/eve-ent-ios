@@ -1,0 +1,20 @@
+/* 
+  Localizable.strings
+  Eve-Ent
+
+  Created by Nikita Kislyakov on 21.11.2019.
+  Copyright © 2019 Nikita Kislyakov. All rights reserved.
+*/
+
+Authorization.EmailTextField.Placeholder = "Email";
+Authorization.PasswordTextField.Placeholder = "Password";
+Authorization.SignInButton.Title = "Sign In";
+
+Account.NavigationBar.Title = "Account";
+Account.TabBar.Title = "Account";
+
+EditProfile.NavigationBar.Title = "Edit Profile";
+EditProfile.FirstNameHint = "First Name";
+EditProfile.LastNameHint = "Last Name";
+
+Common.Save = "Save";

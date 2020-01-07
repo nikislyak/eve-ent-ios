@@ -1,0 +1,68 @@
+name: Eve-Ent
+
+options:
+  bundleIdPrefix: com.vstu.Eve-Ent
+  deploymentTarget:
+    iOS: "13.2"
+  transitivelyLinkDependencies: true
+  developmentLanguage: en
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+packages:
+  Tagged:
+    url: https://github.com/pointfreeco/swift-tagged
+    from: 0.4.0
+  Overture:
+    url: https://github.com/pointfreeco/swift-overture
+    from: 0.5.0
+  KeychainAccess:
+    url: https://github.com/kishikawakatsumi/KeychainAccess
+    from: 4.1.0
+  SDWebImage:
+    url: https://github.com/SDWebImage/SDWebImage
+    from: 5.1.0
+  Stevia:
+    url: https://github.com/freshOS/Stevia
+    from: 4.8.0
+
+targets:
+  Eve-Ent:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Sources/Generated/L10n.swift
+        optional: true
+      - path: Sources/Generated/Assets.swift
+        optional: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.vstu.Eve-Ent
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: LYJJP2ZH5L
+        TARGETED_DEVICE_FAMILY: 1
+        TARGET_PATH: Sources
+    prebuildScripts:
+      - script: |
+          mint run swiftgen swiftgen strings ${SCRIPT_INPUT_FILE_0} -t structured-swift4 --output ${SCRIPT_OUTPUT_FILE_0}
+        name: L10nGen
+        inputFiles:
+          - ${TARGET_PATH}/Resources/Localizable.strings
+        outputFiles:
+          - ${TARGET_PATH}/Generated/L10n.swift
+      - script: |
+          mint run swiftgen swiftgen xcassets ${SCRIPT_INPUT_FILE_0} -t swift4 --output ${SCRIPT_OUTPUT_FILE_0}
+        name: AssetsGen
+        inputFiles:
+          - ${TARGET_PATH}/Resources/Assets.xcassets
+        outputFiles:
+          - ${TARGET_PATH}/Generated/Assets.swift
+    dependencies:
+      - package: Tagged
+      - package: Overture
+      - package: KeychainAccess
+      - package: SDWebImage
+      - package: Stevia
+      - carthage: RouteComposer
+      - sdk: CoreData.framework
