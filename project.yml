@@ -25,6 +25,9 @@ packages:
   Stevia:
     url: https://github.com/freshOS/Stevia
     from: 4.8.0
+  RouteComposer:
+    url: https://github.com/ekazaev/route-composer
+    branch: chore/package_manager
 
 targets:
   Eve-Ent:
@@ -64,5 +67,5 @@ targets:
       - package: KeychainAccess
       - package: SDWebImage
       - package: Stevia
-      - carthage: RouteComposer
+      - package: RouteComposer
       - sdk: CoreData.framework
