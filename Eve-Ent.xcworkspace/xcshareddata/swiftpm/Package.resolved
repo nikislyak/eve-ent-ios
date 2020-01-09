@@ -14,8 +14,8 @@
         "package": "RouteComposer",
         "repositoryURL": "https://github.com/ekazaev/route-composer",
         "state": {
-          "branch": "chore/package_manager",
-          "revision": "4939fe870aa0eba07aef6b8f945713dcd87b5e5b",
+          "branch": "master",
+          "revision": "6dfee694bd63f999e53b270c0299059dd9ad4a05",
           "version": null
         }
       },

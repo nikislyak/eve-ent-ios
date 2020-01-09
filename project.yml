@@ -27,7 +27,7 @@ packages:
     from: 4.8.0
   RouteComposer:
     url: https://github.com/ekazaev/route-composer
-    branch: chore/package_manager
+    branch: master
 
 targets:
   Eve-Ent:
