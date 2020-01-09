@@ -141,12 +141,9 @@ class FeedbackLoop<State: StateType>: ObservableObject {
     init(store: Store<State>) {
         self.store = store
         
-        bindings(on: store.state)
-            .forEach { [weak self] c in
-                self.map {
-                    c.store(in: &$0.bag)
-                }
-            }
+        bindings(on: store.state).forEach { c in
+            c.store(in: &self.bag)
+        }
     }
     
     func bindings(on state: AnyPublisher<State, Never>) -> [AnyCancellable] {

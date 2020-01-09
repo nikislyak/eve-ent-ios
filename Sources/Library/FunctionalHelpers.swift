@@ -69,10 +69,6 @@ func just<A, R>(_ value: R) -> (A) -> R {
     return { _ in value }
 }
 
-func just<A, R: AnyObject>(_ value: R) -> (A) -> R {
-    return { [unowned value] _ in value }
-}
-
 func it<A>(_ arg: A) -> A {
     arg
 }

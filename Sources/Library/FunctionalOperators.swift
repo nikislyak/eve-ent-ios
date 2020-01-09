@@ -6,14 +6,6 @@ prefix func ^ <T, V>(_ kp: KeyPath<T, V>) -> (T) -> V {
     return { $0[keyPath: kp] }
 }
 
-prefix func ^ <T, A>(_ o: T) -> (A) -> T {
-    return { _ in o }
-}
-
-prefix func ^ <T: AnyObject, A>(_ o: T) -> (A) -> T {
-    return { [unowned o] _ in o }
-}
-
 precedencegroup ForwardApplication {
     associativity: left
     higherThan: ForwardComposition
@@ -34,8 +26,8 @@ precedencegroup KeyPathSetting {
 
 infix operator .~ : KeyPathSetting
 
-func .~ <T: AnyObject, V>(_ lhs: ReferenceWritableKeyPath<T, V>, _ value: V) -> (T) -> T {
-    return { $0[keyPath: lhs] = value; return $0 }
+func .~ <T: AnyObject, V>(_ kp: ReferenceWritableKeyPath<T, V>, _ value: V) -> (T) -> T {
+    return { $0[keyPath: kp] = value; return $0 }
 }
 
 precedencegroup ForwardComposition {
