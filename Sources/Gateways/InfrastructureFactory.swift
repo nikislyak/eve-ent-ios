@@ -9,6 +9,7 @@
 import Foundation
 import CoreData
 import KeychainAccess
+import RouteComposer
 
 final class InfrastructureFactory {
     private var momUrl: URL {
@@ -27,6 +28,14 @@ final class InfrastructureFactory {
     private lazy var keychainStorage = KeychainStorage(keychain: keychain, decoder: decoder, encoder: encoder)
     private lazy var userDefaultsStorage = UserDefaultsStorage(userDefaults: .standard, decoder: decoder, encoder: encoder)
     
+    private lazy var router: Router = {
+        var router = DefaultRouter()
+        
+        router.add(NavigationDelayingInterceptor())
+        
+        return router
+    }()
+    
     func makeMOC() -> NSManagedObjectContext {
         moc
     }
@@ -37,5 +46,9 @@ final class InfrastructureFactory {
     
     func makePersistentContainer() -> NSPersistentContainer {
         container
+    }
+    
+    func makeRouter() -> Router {
+        router
     }
 }

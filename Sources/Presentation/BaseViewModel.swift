@@ -12,9 +12,11 @@ class BaseViewModel {
     var bag = Set<AnyCancellable>()
     
     let useCasesFactory: UseCasesFactory
+    let router: RouterAbstraction
     
-    init(_ useCasesFactory: UseCasesFactory) {
+    init(_ useCasesFactory: UseCasesFactory, _ router: RouterAbstraction) {
         self.useCasesFactory = useCasesFactory
+        self.router = router
         
         didInit().forEach { $0.store(in: &self.bag) }
     }
