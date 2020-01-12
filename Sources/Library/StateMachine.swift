@@ -132,21 +132,3 @@ open class Store<State: StateType> {
         { value in self.dispatch(action(value)) }
     }
 }
-
-class FeedbackLoop<State: StateType>: ObservableObject {
-    let store: Store<State>
-    
-    var bag = Set<AnyCancellable>()
-    
-    init(store: Store<State>) {
-        self.store = store
-        
-        bindings(on: store.state).forEach { c in
-            c.store(in: &self.bag)
-        }
-    }
-    
-    func bindings(on state: AnyPublisher<State, Never>) -> [AnyCancellable] {
-        []
-    }
-}
