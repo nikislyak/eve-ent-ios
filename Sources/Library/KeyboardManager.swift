@@ -81,8 +81,6 @@ open class KeyboardManager {
     }
     
     open func onKeyboardFrameChange(willHide: Bool, animationData: AnimationData) {}
-    
-    open func onKeyboard(notificationName: NSNotification.Name, keyboardHeight: CGFloat) {}
 }
 
 open class ScrollViewInsetAdjustingKeyboardManager: KeyboardManager {
