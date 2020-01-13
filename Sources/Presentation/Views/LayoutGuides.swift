@@ -40,13 +40,14 @@ final public class KeyboardLayoutGuide: UILayoutGuide {
     }
 
     @objc private func receive(notification: Notification) {
-        let keyboardRawSize = notification.userInfo![UIResponder.keyboardFrameEndUserInfoKey] as! NSValue
+        let keyboardSize = (notification.userInfo![UIResponder.keyboardFrameEndUserInfoKey] as! NSValue).cgRectValue
+        let duration = notification.userInfo![UIResponder.keyboardAnimationDurationUserInfoKey] as! Double
         self.bottomConstraint.constant =
                  notification.name == UIView.keyboardWillHideNotification
                  ? 0
-                 : -keyboardRawSize.cgRectValue.height + self.view.safeAreaInsets.bottom
+                 : -keyboardSize.height + self.view.safeAreaInsets.bottom
         
-        UIView.animate(withDuration: 0.5) {
+        UIView.animate(withDuration: duration) {
             self.view.layoutIfNeeded()
         }
     }

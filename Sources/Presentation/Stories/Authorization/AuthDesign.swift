@@ -7,24 +7,69 @@
 
 import UIKit
 
-
 public enum AuthViewDesign {
-    // MARK: Label
+    private static func roundedRect(_ view: UIView) {
+        view.layer.cornerRadius = 5
+        view.layer.masksToBounds = true
+    }
+    
+    private static func configureTextField(textField tf: UITextField, text: String) {
+        tf.attributedPlaceholder = NSAttributedString(
+            string: text,
+            attributes: [.foregroundColor : UIColor.lightGray]
+        )
+        tf.textColor = .white
+        tf.keyboardAppearance = .dark
+    }
+    
     public static func titleLabel(_ label: UILabel) {
         label.numberOfLines = 0
-        label.textColor = UIColor.white.withAlphaComponent(0.8)
+        label.textColor = UIColor.black.withAlphaComponent(0.95)
         label.font = .systemFont(ofSize: 70, weight: .semibold)
         label.text = "Title"
     }
     
     public static func subtitleLabel(_ label: UILabel) {
         label.numberOfLines = 0
-        label.textColor = UIColor.white.withAlphaComponent(0.8)
-        label.font = .systemFont(ofSize: 25, weight: .ultraLight)
+        label.textColor = UIColor.black.withAlphaComponent(0.95)
+        label.font = .systemFont(ofSize: 35, weight: .ultraLight)
         label.text = "Subtitle"
     }
     
-    // MARK: Gradient
+    public static func buildGlareEmitter() -> CAEmitterLayer {
+        let glareLayer = GlareLayer()
+        glareLayer.frame = CGRect(x: 0, y: 0, width: 100, height: 100)
+        glareLayer.setNeedsDisplay()
+        
+        let image: CGImage? = {
+            UIGraphicsBeginImageContext(glareLayer.bounds.size);
+            glareLayer.render(in: UIGraphicsGetCurrentContext()!)
+            let image = UIGraphicsGetImageFromCurrentImageContext();
+            UIGraphicsEndImageContext()
+            return image?.cgImage
+        }()
+        
+        let cell = CAEmitterCell()
+        cell.contents = image
+        cell.emissionRange = .pi
+        cell.lifetime = 15
+        cell.birthRate = 1.5
+        cell.scale = 0.3
+        cell.scaleRange = 1
+        cell.velocity = 0
+        cell.velocityRange = 0
+        cell.spin = 0
+        cell.spinRange = 0
+        cell.yAcceleration = 15.0
+        cell.xAcceleration = 2.0
+        
+        let emitter = CAEmitterLayer()
+        emitter.renderMode = .additive
+        emitter.emitterShape = .line
+        emitter.emitterCells = [cell]
+        return emitter
+    }
+    
     public static func buildGradient() -> AnimatedGradient {
         let colors = [
             AnimatedGradient.ColorBox(
@@ -51,31 +96,11 @@ public enum AuthViewDesign {
         )
     }
     
-    // MARK: UIView
-    private static func roundedRect(_ view: UIView) {
-        view.layer.cornerRadius = 5
-        view.layer.masksToBounds = true
-    }
-    
-    private static func blockBackground(_ view: UIView) {
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.2)
-    }
 
-    // MARK: TextField
-    public static func textFieldBlock(_ view: UIView) {
+    public static func textFieldBlock(_ view: VisualEffectContainer<AuthView.TextFieldBlock>) {
         roundedRect(view)
-        blockBackground(view)
     }
     
-    private static func configureTextField(textField tf: UITextField, text: String) {
-        tf.attributedPlaceholder = NSAttributedString(
-            string: text,
-            attributes: [.foregroundColor : UIColor.lightGray]
-        )
-        tf.textColor = .white
-        tf.keyboardAppearance = .dark
-    }
- 
     public static func emailTextField(_ tf: UITextField) {
         configureTextField(
             textField: tf,
@@ -95,12 +120,10 @@ public enum AuthViewDesign {
         tf.textContentType = .password
     }
     
-    // MARK: Button
-    public static func loginButton(_ btn: UIButton) {
+    public static func loginButton(_ btn: VisualEffectContainer<UIButton>) {
         roundedRect(btn)
-        blockBackground(btn)
-        btn.setTitle("Auth", for: .normal)
-        btn.setTitleColor(.lightGray, for: .normal)
-        btn.setTitleColor(.white, for: .highlighted)
+        btn.view.setTitle("Auth", for: .normal)
+        btn.view.setTitleColor(.lightGray, for: .normal)
+        btn.view.setTitleColor(.white, for: .highlighted)
     }
 }

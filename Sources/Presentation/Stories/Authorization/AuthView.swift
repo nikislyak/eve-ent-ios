@@ -8,7 +8,6 @@
 import UIKit
 import Stevia
 
-// MARK: - Block view
 public extension AuthView {
     class TextFieldBlock: UIView {
         public let emailTextField = with(UITextField(), AuthViewDesign.emailTextField)
@@ -40,7 +39,6 @@ public extension AuthView {
     }
 }
 
-// MARK: - Main
 public class AuthView: UIView {
     typealias Design = AuthViewDesign
     
@@ -53,15 +51,19 @@ public class AuthView: UIView {
     public let subtitleLabel = with(UILabel(), Design.subtitleLabel)
     
     private lazy var keyboardLayout = KeyboardLayoutGuide(view: self, usingSafeArea: true)
-    private let gradient = AuthViewDesign.buildGradient()
+    
+    private let layersView = UIView()
+    private let gradient = Design.buildGradient()
+    private let emitter = Design.buildGlareEmitter()
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
         self.backgroundColor = .white
         
+        self.insertSubview(layersView, at: 0)
         for view in [blockView, loginBtn, titleLabel, subtitleLabel] {
             view.translatesAutoresizingMaskIntoConstraints = false
-            self.addSubview(view)
+            self.insertSubview(view, at: 1)
         }
         addGestureRecognizer(
             UITapGestureRecognizer(target: self, action: #selector(UIView.endEditing))
@@ -71,18 +73,21 @@ public class AuthView: UIView {
         
         DispatchQueue.main.async {
             self.addAnimatedGradient()
+            self.addGlareEmitter()
             self.titleLabel.upscaleAnimation(0.5, duration: 1.2, delay: 0.5)
             self.subtitleLabel.upscaleAnimation(0.5, duration: 0.9, delay: 0.8)
         }
     }
     
-    func setupConstraints() {
-        loginBtn.Height == 30
+    private func setupConstraints() {
+        layersView.fillContainer()
+        
+        loginBtn.Height == 40
         loginBtn.Left == keyboardLayout.Left + 10
         loginBtn.Right == keyboardLayout.Right - 10
         loginBtn.Bottom == keyboardLayout.Bottom - 10
         
-        blockView.Height >= 100
+        blockView.Height == 100
         blockView.Left == keyboardLayout.Left + 10
         blockView.Right == keyboardLayout.Right - 10
         blockView.Bottom == loginBtn.Top - 10
@@ -96,10 +101,16 @@ public class AuthView: UIView {
         subtitleLabel.rightAnchor.constraint(lessThanOrEqualTo: safeAreaLayoutGuide.rightAnchor).isActive = true
     }
     
+    private func addGlareEmitter() {
+        emitter.frame = bounds
+        emitter.emitterPosition = CGPoint(x: bounds.width / 2, y: 0)
+        emitter.emitterSize = bounds.size
+        layersView.layer.insertSublayer(emitter, at: 2)
+    }
+    
     private func addAnimatedGradient()  {
         gradient.frame = bounds
-        gradient.zPosition = -1
-        layer.addSublayer(self.gradient)
+        layersView.layer.insertSublayer(self.gradient, at: 1)
         gradient.startAnimation()
     }
     
