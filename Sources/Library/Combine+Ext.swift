@@ -17,11 +17,11 @@ extension Subscribers.Completion {
 }
 
 extension Collection where Element: Cancellable {
-    func storeAll(in bag: inout Set<AnyCancellable>) {
+    func store(in bag: inout Set<AnyCancellable>) {
         forEach { $0.store(in: &bag) }
     }
     
-    func storeAll<C: RangeReplaceableCollection>(in bag: inout C) where C.Element == AnyCancellable {
+    func store<C: RangeReplaceableCollection>(in bag: inout C) where C.Element == AnyCancellable {
         forEach { $0.store(in: &bag) }
     }
 }

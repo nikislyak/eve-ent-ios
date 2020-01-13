@@ -7,74 +7,68 @@
 
 import Foundation
 import UIKit
+import Combine
 
-protocol View: class {
-    associatedtype ViewModel
+protocol StateDriven: class {
+    associatedtype State
     
-    func render(_ viewModel: ViewModel)
+    func render(_ state: State)
 }
 
-protocol Presenter: class {
-    associatedtype V: View
-    associatedtype State: Equatable
-    
-    var view: V! { get set }
-    
-    func viewModel(for state: State) -> V.ViewModel
-}
-
-class BasePresenter<V: View, State: Equatable & EmptyInitializable>: Presenter {
+class BaseController<View: UIView & StateDriven>: UIViewController, UserInterfaceModule where View.State: EmptyInitializable {
     let useCasesFactory: UseCasesFactory
     let router: RouterAbstraction
     
-    weak var view: V! {
+    var state: View.State = .init() {
         didSet {
-            guard view != nil else {
+            guard typedView != nil else {
                 return
             }
             
-            state = initialState
+            typedView.render(state)
         }
     }
     
-    var state: State {
-        didSet {
-            guard view != nil else {
-                return
-            }
-
-            view.render(viewModel(for: state))
-        }
-    }
+    var bag = Set<AnyCancellable>()
     
-    private let initialState: State
-    
-    init(
-        initialState: State = .init(),
-        useCasesFactory: UseCasesFactory,
-        router: RouterAbstraction
-    ) {
-        self.initialState = initialState
-        self.state = initialState
+    required init(useCasesFactory: UseCasesFactory, router: RouterAbstraction) {
         self.useCasesFactory = useCasesFactory
         self.router = router
-    }
-    
-    func viewModel(for state: State) -> V.ViewModel {
-        fatalError()
-    }
-}
-
-class Controller<V: UIView, P: Presenter>: UIViewController where P.V == V {
-    let presenter: P
-    
-    init(presenter: P) {
-        self.presenter = presenter
         
         super.init(nibName: nil, bundle: nil)
+        
+        setup()
     }
+    
+    /// Override point
+    func setup() {}
     
     required init?(coder: NSCoder) {
         fatalError()
     }
+    
+    var typedView: View!
+    
+    override func loadView() {
+        typedView = View()
+        view = typedView
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        makeSubscriptions().store(in: &bag)
+    }
+    
+    /// Override point
+    func makeSubscriptions() -> [AnyCancellable] {
+        []
+    }
+    
+    /// Override point
+    class var keyboardManagerClass: KeyboardManager.Type {
+        ScrollViewInsetAdjustingKeyboardManager.self
+    }
+    
+    let keyboardManager = BaseController.keyboardManagerClass.init()
 }

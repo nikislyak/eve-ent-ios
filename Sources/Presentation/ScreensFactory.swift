@@ -6,6 +6,14 @@
 //
 
 import Foundation
-import Combine
+import UIKit
 
-final class ScreensFactory {}
+struct ScreensFactories {
+    let authFactory: AuthFactory
+    
+    init(
+        authFactory: AuthFactory
+    ) {
+        self.authFactory = authFactory
+    }
+}

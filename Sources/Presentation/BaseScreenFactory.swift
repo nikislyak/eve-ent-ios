@@ -6,11 +6,22 @@
 //
 
 import Foundation
+import UIKit
 
-class BaseScreenFactory {
+protocol UserInterfaceModule: UIViewController {
+    init(useCasesFactory: UseCasesFactory, router: RouterAbstraction)
+}
+
+class BaseScreenFactory<S: UserInterfaceModule> {
     let useCasesFactory: UseCasesFactory
+    let router: RouterAbstraction
     
-    init(_ useCasesFactory: UseCasesFactory) {
+    init(useCasesFactory: UseCasesFactory, router: RouterAbstraction) {
         self.useCasesFactory = useCasesFactory
+        self.router = router
+    }
+    
+    func makeScreen() -> S {
+        S(useCasesFactory: useCasesFactory, router: router)
     }
 }

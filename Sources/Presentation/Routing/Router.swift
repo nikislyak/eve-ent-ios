@@ -18,11 +18,10 @@ protocol RouterAbstraction {
 
 final class RouterAbstractionImpl: RouterAbstraction {
     private let routerImpl: Router
-    private let factory: ScreenConfigurationsFactory
+    var factory: ScreenConfigurationsFactory!
     
-    init(_ router: Router, _ factory: ScreenConfigurationsFactory) {
+    init(_ router: Router) {
         self.routerImpl = router
-        self.factory = factory
     }
     
     func navigate(to screen: Screen) {

@@ -11,11 +11,9 @@ import Stevia
 // MARK: - Block view
 public extension AuthView {
     class TextFieldBlock: UIView {
-        public let emailTextField = UITextField()
-            |= AuthViewDesign.emailTextField
+        public let emailTextField = with(UITextField(), AuthViewDesign.emailTextField)
             
-        public let passwordTextField = UITextField()
-            |= AuthViewDesign.passwordTextField
+        public let passwordTextField = with(UITextField(), AuthViewDesign.passwordTextField)
         
         override init(frame: CGRect) {
             super.init(frame: frame)
@@ -45,14 +43,14 @@ public extension AuthView {
 // MARK: - Main
 public class AuthView: UIView {
     typealias Design = AuthViewDesign
-    public let blockView = TextFieldBlock()
-        |= Design.textFieldBlock
-    public let loginBtn = UIButton()
-        |= Design.loginButton
-    public let titleLabel = UILabel()
-        |= Design.titleLabel
-    public let subtitleLabel = UILabel()
-        |= Design.subtitleLabel
+    
+    public let blockView: TextFieldBlock = with(TextFieldBlock(), Design.textFieldBlock)
+    
+    public let loginBtn = with(UIButton(), Design.loginButton)
+
+    public let titleLabel = with(UILabel(), Design.titleLabel)
+    
+    public let subtitleLabel = with(UILabel(), Design.subtitleLabel)
     
     private lazy var keyboardLayout = KeyboardLayoutGuide(view: self, usingSafeArea: true)
     private let gradient = AuthViewDesign.buildGradient()
@@ -107,6 +105,16 @@ public class AuthView: UIView {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+}
+
+extension AuthView: StateDriven {
+    struct State: EmptyInitializable {
+        var email = ""
+    }
+    
+    func render(_ state: AuthView.State) {
+        blockView.emailTextField.text = state.email
     }
 }
 

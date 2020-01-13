@@ -29,7 +29,7 @@ open class KeyboardManager {
                 return
             }
             
-            configureFeedback().storeAll(in: &bag)
+            configureFeedback().store(in: &bag)
         }
     }
     

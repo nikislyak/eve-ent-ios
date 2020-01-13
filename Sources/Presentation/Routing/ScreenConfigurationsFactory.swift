@@ -10,20 +10,20 @@ import UIKit
 import RouteComposer
 
 protocol ScreenConfigurationsFactory {
-    var auth: DestinationStep<UIViewController, Any?> { get }
+    var auth: DestinationStep<AuthController, Any?> { get }
 }
 
 final class ScreenConfigurationsFactoryImpl: ScreenConfigurationsFactory {
-    private let screensFactory: ScreensFactory
+    private let screensFactories: ScreensFactories
     
-    init(_ screensFactory: ScreensFactory) {
-        self.screensFactory = screensFactory
+    init(_ screensFactories: ScreensFactories) {
+        self.screensFactories = screensFactories
     }
     
-    var auth: DestinationStep<UIViewController, Any?> {
+    var auth: DestinationStep<AuthController, Any?> {
         StepAssembly(
-            finder: NilFinder<UIViewController, Any?>(),
-            factory: ClassFactory()
+            finder: NilFinder<AuthController, Any?>(),
+            factory: screensFactories.authFactory
         )
         .using(GeneralAction.replaceRoot())
         .from(GeneralStep.root())

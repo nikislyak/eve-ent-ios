@@ -1,17 +1,4 @@
 import Foundation
-import UIKit
-
-precedencegroup ActionWithObject {
-    associativity: left
-    higherThan: AssignmentPrecedence
-}
-
-infix operator |= : ActionWithObject
-
-func |= <A: AnyObject>(_ o: A, g: @escaping (A) -> Void ) -> A {
-    g(o)
-    return o
-}
 
 prefix operator ^
 
@@ -25,7 +12,6 @@ precedencegroup ForwardApplication {
 }
 
 infix operator |> : ForwardApplication
-
 
 func |> <A, B>(
     _ o: A,
@@ -49,7 +35,7 @@ precedencegroup ForwardComposition {
     higherThan: AssignmentPrecedence
 }
 
-infix operator >>>: ForwardComposition
+infix operator >>> : ForwardComposition
 
 func >>> <A, B, C>(_ f: @escaping (A) -> B, _ g: @escaping (B) -> C) -> (A) -> C {
     return { g(f($0)) }

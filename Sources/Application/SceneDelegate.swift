@@ -16,16 +16,25 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private lazy var gatewaysFactory = GatewaysMockFactory(infrastructureFactory)
     private lazy var useCasesFactory = UseCasesFactory(gatewaysFactory)
     
-    private lazy var screensFactory = ScreensFactory()
-    private lazy var screenConfigurationsFactory = ScreenConfigurationsFactoryImpl(screensFactory)
+    private lazy var authFactory = AuthFactory(useCasesFactory: useCasesFactory, router: _router)
     
-    private lazy var router: RouterAbstraction = RouterAbstractionImpl(infrastructureFactory.makeRouter(), screenConfigurationsFactory)
+    private lazy var screensFactories = ScreensFactories(authFactory: authFactory)
+    private lazy var screenConfigurationsFactory = ScreenConfigurationsFactoryImpl(screensFactories)
+    
+    private lazy var _router = RouterAbstractionImpl(infrastructureFactory.makeRouter())
+    private var router: RouterAbstraction {
+        _router.factory = screenConfigurationsFactory
+        
+        return _router
+    }
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
             
             self.window = window
+            
+            self.window?.rootViewController = .init()
             
             window.makeKeyAndVisible()
             
