@@ -30,10 +30,37 @@ extension Publishers {
                 .receive(subscriber: subscriber)
         }
     }
+    
+    public struct TryFlatMapLatest<Upstream: Publisher, P: Publisher>: Publisher {
+        public typealias Output = P.Output
+        
+        public typealias Failure = Error
+        
+        public let upstream: Upstream
+        
+        public let transform: (Upstream.Output) throws -> P
+        
+        init(upstream: Upstream, transform: @escaping (Upstream.Output) throws -> P) {
+            self.upstream = upstream
+            self.transform = transform
+        }
+        
+        public func receive<S: Subscriber>(subscriber: S) where Failure == S.Failure, Output == S.Input {
+            upstream
+                .tryMap(transform)
+                .map { $0.mapError { $0 as Error } }
+                .switchToLatest()
+                .receive(subscriber: subscriber)
+        }
+    }
 }
 
 extension Publisher {
     public func flatMapLatest<P: Publisher>(_ transform: @escaping (Output) -> P) -> Publishers.FlatMapLatest<Self, P> {
+        .init(upstream: self, transform: transform)
+    }
+    
+    public func tryFlatMapLatest<P: Publisher>(_ transform: @escaping (Output) throws -> P) -> Publishers.TryFlatMapLatest<Self, P> {
         .init(upstream: self, transform: transform)
     }
 }

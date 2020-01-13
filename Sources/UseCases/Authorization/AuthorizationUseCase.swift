@@ -48,8 +48,7 @@ class AuthorizationUseCase {
     func perform(credentials: Credentials) -> AnyPublisher<Void, Error> {
         authGateway
             .authorize(credentials: credentials)
-            .map(^\.user >>> userPersistence.set)
-            .switchToLatest()
+            .flatMapLatest(^\.user >>> userPersistence.set)
             .eraseToAnyPublisher()
     }
     

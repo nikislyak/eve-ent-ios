@@ -18,7 +18,7 @@ class AuthController: BaseController<AuthView> {
     
     @objc func signIn() {
         Just(useCasesFactory.makeAuthorizationUseCase())
-            .tryMap { [weak typedView] (auth: AuthorizationUseCase) in
+            .tryFlatMapLatest { [weak typedView] (auth: AuthorizationUseCase) in
                 auth.perform(
                     credentials: Credentials(
                         email: try Email(rawValue: typedView?.blockView.emailTextField.text ?? ""),
@@ -26,7 +26,6 @@ class AuthController: BaseController<AuthView> {
                     )
                 )
             }
-            .switchToLatest()
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] in $0.error.map { _ in self?.state.email = "ERROR" } },
