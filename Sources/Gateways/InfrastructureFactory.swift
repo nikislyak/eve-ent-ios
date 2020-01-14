@@ -16,9 +16,17 @@ final class InfrastructureFactory {
         Bundle.main.url(forResource: "eve-ent-model", withExtension: "momd")!
     }
     
-    private lazy var moc = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
     private lazy var mom = NSManagedObjectModel(contentsOf: momUrl)!
-    private lazy var container = NSPersistentContainer(name: "eve-ent-container", managedObjectModel: mom)
+    
+    private lazy var moc = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+    
+    private lazy var pc = with(NSPersistentContainer(name: "eve-ent-container", managedObjectModel: mom)) {
+        $0.loadPersistentStores { desc, error in
+            if let error = error {
+                fatalError(error.localizedDescription)
+            }
+        }
+    }
     
     private lazy var decoder = JSONDecoder()
     private lazy var encoder = JSONEncoder()
@@ -29,6 +37,7 @@ final class InfrastructureFactory {
     private lazy var userDefaultsStorage = UserDefaultsStorage(userDefaults: .standard, decoder: decoder, encoder: encoder)
     
     private lazy var router: Router = {
+        _ = pc
         var router = DefaultRouter()
         
         router.add(NavigationDelayingInterceptor())
@@ -45,7 +54,7 @@ final class InfrastructureFactory {
     }
     
     func makePersistentContainer() -> NSPersistentContainer {
-        container
+        pc
     }
     
     func makeRouter() -> Router {

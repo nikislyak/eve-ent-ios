@@ -21,7 +21,8 @@ final class GatewaysMockFactory: GatewaysFactory {
     }
     
     private lazy var basePersistenceGateway = BasePersistenceGateway(
-        infrastructureFactory.makeMOC()
+        infrastructureFactory.makeMOC(),
+        infrastructureFactory.makePersistentContainer()
     )
     
     private lazy var authGateway = AuthorizationGatewayMock()

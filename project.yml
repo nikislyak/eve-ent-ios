@@ -69,3 +69,16 @@ targets:
       - package: Stevia
       - package: RouteComposer
       - sdk: CoreData.framework
+    scheme:
+      testTargets:
+        - Eve-Ent-Tests
+      gatherCoverageData: true
+
+  Eve-Ent-Tests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: Eve-Ent
+      - sdk: CoreData.framework
