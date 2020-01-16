@@ -11,7 +11,30 @@ import CoreData
 import KeychainAccess
 import RouteComposer
 
-final class InfrastructureFactory {
+enum PersistentModule {
+    case container(NSPersistentContainer)
+    case coordinator(NSPersistentStoreCoordinator)
+    
+    var container: NSPersistentContainer? {
+        guard case let .container(container) = self else { return nil }
+        
+        return container
+    }
+    
+    var coordinator: NSPersistentStoreCoordinator? {
+        guard case let .coordinator(coordinator) = self else { return nil }
+        
+        return coordinator
+    }
+}
+
+protocol CoreDataFactory {
+    func makeManagedObjectModel() -> NSManagedObjectModel
+    func makeManagedObjectContext() -> NSManagedObjectContext
+    func makePersistentContainer() -> NSPersistentContainer
+}
+
+final class CoreDataFactoryImpl: CoreDataFactory {
     private var momUrl: URL {
         Bundle.main.url(forResource: "eve-ent-model", withExtension: "momd")!
     }
@@ -28,6 +51,22 @@ final class InfrastructureFactory {
         }
     }
     
+    func makeManagedObjectModel() -> NSManagedObjectModel {
+        mom
+    }
+    
+    func makeManagedObjectContext() -> NSManagedObjectContext {
+        moc
+    }
+    
+    func makePersistentContainer() -> NSPersistentContainer {
+        pc
+    }
+}
+
+final class InfrastructureFactory {
+    private let coreDataFactory: CoreDataFactory
+    
     private lazy var decoder = JSONDecoder()
     private lazy var encoder = JSONEncoder()
     
@@ -37,7 +76,6 @@ final class InfrastructureFactory {
     private lazy var userDefaultsStorage = UserDefaultsStorage(userDefaults: .standard, decoder: decoder, encoder: encoder)
     
     private lazy var router: Router = {
-        _ = pc
         var router = DefaultRouter()
         
         router.add(NavigationDelayingInterceptor())
@@ -45,16 +83,17 @@ final class InfrastructureFactory {
         return router
     }()
     
-    func makeMOC() -> NSManagedObjectContext {
-        moc
+    init(coreDataFactory: CoreDataFactory) {
+        self.coreDataFactory = coreDataFactory
     }
     
-    func makeMOM() -> NSManagedObjectModel {
-        mom
-    }
+    private lazy var basePersistenceGateway = BasePersistenceGateway(
+        backgroundContext: coreDataFactory.makeManagedObjectContext(),
+        container: coreDataFactory.makePersistentContainer()
+    )
     
-    func makePersistentContainer() -> NSPersistentContainer {
-        pc
+    func makeBasePersistenceGateway() -> BasePersistenceGateway {
+        basePersistenceGateway
     }
     
     func makeRouter() -> Router {

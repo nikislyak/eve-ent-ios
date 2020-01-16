@@ -13,11 +13,11 @@ import Combine
 
 extension UserDTO: PlainEntityConvertible {
     public var plain: TestUser {
-        .init(id: 0, firstName: firstName ?? "", lastName: lastName ?? "")
+        .init(id: 0, firstName: firstName, lastName: lastName)
     }
 }
 
-public struct TestUser: NSManagedObjectConvertible, Equatable {
+public struct TestUser: NSManagedObjectConvertible, Equatable, Identifiable {
     public typealias ManagedEntity = UserDTO
     
     public let id: UInt64
@@ -37,46 +37,100 @@ let testUsers: [TestUser] = [
     TestUser(id: 2, firstName: "Makaley2", lastName: "Kalkin2"),
 ]
 
-class BasePersistenceGatewayTests: XCTestCase {
-    private let infrastructureFactory = InfrastructureFactory()
+final class TestCoreDataFactory: CoreDataFactory {
+    private var momUrl: URL {
+        Bundle.main.url(forResource: "eve-ent-model", withExtension: "momd")!
+    }
     
-    lazy var gateway: BasePersistenceGateway = .init(infrastructureFactory.makeMOC(), infrastructureFactory.makePersistentContainer())
+    private lazy var mom = NSManagedObjectModel(contentsOf: momUrl)!
+    
+    private lazy var moc = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+    
+    private lazy var pc = with(NSPersistentContainer(name: "eve-ent-container", managedObjectModel: mom)) {
+        $0.persistentStoreDescriptions = [
+            NSPersistentStoreDescription()
+                |> \.type .~ NSInMemoryStoreType
+                |> \.shouldAddStoreAsynchronously .~ false
+        ]
+        
+        $0.loadPersistentStores { desc, error in
+            if let error = error {
+                fatalError(error.localizedDescription)
+            }
+        }
+    }
+    
+    func makeManagedObjectModel() -> NSManagedObjectModel {
+        mom
+    }
+    
+    func makeManagedObjectContext() -> NSManagedObjectContext {
+        moc
+    }
+    
+    func makePersistentContainer() -> NSPersistentContainer {
+        pc
+    }
+}
 
-    override func setUp() {}
+class BasePersistenceGatewayTests: XCTestCase {
+    private lazy var coreDataFactory = TestCoreDataFactory()
+    private lazy var infrastructureFactory = InfrastructureFactory(coreDataFactory: coreDataFactory)
+    
+    private var gateway: BasePersistenceGateway!
 
-    override func tearDown() {}
+    override func setUp() {
+        super.setUp()
+        
+        gateway = infrastructureFactory.makeBasePersistenceGateway()
+    }
+
+    override func tearDown() {
+        gateway = nil
+        
+        super.tearDown()
+    }
     
     func testSave() {
-        _ = Publishers
+        let ex = expectation(description: "Test saving")
+        
+        let cancellable = Publishers
             .Sequence(sequence: testUsers)
             .flatMap(gateway.save)
-            .collect()
             .sink(
-                receiveCompletion: { XCTAssert($0.error == nil) },
-                receiveValue: { _ in }
+                receiveCompletion: {
+                    $0.error.map { XCTFail($0.localizedDescription) } ?? ex.fulfill()
+                },
+                receiveValue: {}
             )
+        
+        waitForExpectations(timeout: 500)
     }
 
     func testFetch() {
-        let users = gateway.get(all: TestUser.self)
+        let ex = expectation(description: "Test fetching")
         
-        let ex = XCTestExpectation()
-        
-        _ = users
+        let cancellable = Publishers
+            .Sequence(sequence: testUsers)
+            .flatMap(gateway.save)
+            .collect()
+            .map { [gateway] _ in
+                gateway!.get(allOfType: TestUser.self)
+            }
+            .switchToLatest()
             .sink(
                 receiveCompletion: {
-                    $0.error.map { _ in
-                        XCTFail()
-                    }
+                    $0.error.map { XCTFail($0.localizedDescription) }
                 },
                 receiveValue: { array in
                     if array == testUsers {
-                        XCTAssertEqual(array, testUsers)
                         ex.fulfill()
                     } else {
                         XCTFail()
                     }
                 }
-        )
+            )
+        
+        waitForExpectations(timeout: 500)
     }
 }

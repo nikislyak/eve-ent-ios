@@ -22,10 +22,22 @@ extension PlainEntityConvertible {
     }
 }
 
-protocol NSManagedObjectConvertible: Identifiable where ID == UInt64 {
+protocol NSManagedObjectConvertible {
     associatedtype ManagedEntity: PlainEntityConvertible where ManagedEntity.PlainEntity == Self
     
     func configure(new managed: ManagedEntity)
+}
+
+extension PlainEntityConvertible {
+    public init?(context: NSManagedObjectContext) {
+        let name = String(describing: type(of: self))
+        
+        guard let entity = NSEntityDescription.entity(forEntityName: name, in: context) else {
+            return nil
+        }
+        
+        self.init(entity: entity, insertInto: context)
+    }
 }
 
 extension NSPersistentContainer {
@@ -70,12 +82,12 @@ class BasePersistenceGateway {
     private let context: NSManagedObjectContext
     private let container: NSPersistentContainer
     
-    init(_ context: NSManagedObjectContext, _ container: NSPersistentContainer) {
+    init(backgroundContext context: NSManagedObjectContext, container: NSPersistentContainer) {
         self.context = context
         self.container = container
     }
     
-    func get<T: NSManagedObjectConvertible>(all plainType: T.Type) -> AnyPublisher<[T], Error> {
+    func get<T: NSManagedObjectConvertible>(allOfType plainType: T.Type) -> AnyPublisher<[T], Error> {
         container.performReadingBackgroundTask { context in
             try context
                 .fetch(NSFetchRequest(entityName: T.ManagedEntity.name))
@@ -85,11 +97,15 @@ class BasePersistenceGateway {
     
     func save<T: NSManagedObjectConvertible>(_ plain: T) -> AnyPublisher<Void, Error> {
         container.performWritingBackgroundTask { context in
-            plain.configure(new: T.ManagedEntity(context: context))
+            T.ManagedEntity(context: context).map(plain.configure)
         }
     }
     
-//    func save<T: NSManagedObjectConvertible>(_ plains: [T]) -> AnyPublisher<Void, Error> {
-//        
-//    }
+    func save<T: NSManagedObjectConvertible>(_ plains: [T]) -> AnyPublisher<Void, Error> {
+        container.performWritingBackgroundTask { context in
+            plains.forEach { plain in
+                T.ManagedEntity(context: context).map(plain.configure)
+            }
+        }
+    }
 }

@@ -20,19 +20,10 @@ final class GatewaysMockFactory: GatewaysFactory {
         self.infrastructureFactory = infrastructureFactory
     }
     
-    private lazy var basePersistenceGateway = BasePersistenceGateway(
-        infrastructureFactory.makeMOC(),
-        infrastructureFactory.makePersistentContainer()
-    )
-    
     private lazy var authGateway = AuthorizationGatewayMock()
     
     func makeAuthorizationGateway() -> AuthorizationGateway {
         authGateway
-    }
-    
-    func makeBasePersistenceGateway() -> BasePersistenceGateway {
-        basePersistenceGateway
     }
     
     private lazy var userPersistence = UserPersistenceGatewayMock()

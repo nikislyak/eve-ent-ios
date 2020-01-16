@@ -46,6 +46,7 @@ targets:
         DEVELOPMENT_TEAM: LYJJP2ZH5L
         TARGETED_DEVICE_FAMILY: 1
         TARGET_PATH: Sources
+      SWIFT_OBJC_BRIDGING_HEADER: Sources/Support/Bridging/Eve-Ent-Bridging-Header.h
     prebuildScripts:
       - script: |
           mint run swiftgen swiftgen strings ${SCRIPT_INPUT_FILE_0} -t structured-swift4 --output ${SCRIPT_OUTPUT_FILE_0}
@@ -79,6 +80,8 @@ targets:
     platform: iOS
     sources:
       - path: Tests
+    settings:
+      SWIFT_OBJC_BRIDGING_HEADER: Tests/Support/Bridging/Eve-Ent-Bridging-Header.h
     dependencies:
       - target: Eve-Ent
       - sdk: CoreData.framework

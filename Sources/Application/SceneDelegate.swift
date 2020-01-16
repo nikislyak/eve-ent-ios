@@ -12,7 +12,8 @@ import Combine
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     
-    private lazy var infrastructureFactory = InfrastructureFactory()
+    private lazy var coreDataFactory = CoreDataFactoryImpl()
+    private lazy var infrastructureFactory = InfrastructureFactory(coreDataFactory: coreDataFactory)
     private lazy var gatewaysFactory = GatewaysMockFactory(infrastructureFactory)
     private lazy var useCasesFactory = UseCasesFactory(gatewaysFactory)
     
