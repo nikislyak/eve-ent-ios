@@ -7,25 +7,25 @@
 
 import XCTest
 import CoreData
-import Tagged
 import Combine
 @testable import Eve_Ent
 
 extension UserDTO: PlainEntityConvertible {
     public var plain: TestUser {
-        .init(id: 0, firstName: firstName, lastName: lastName)
+        .init(id: id, firstName: firstName, lastName: lastName)
     }
 }
 
 public struct TestUser: NSManagedObjectConvertible, Equatable, Identifiable {
     public typealias ManagedEntity = UserDTO
     
-    public let id: UInt64
+    public let id: Int64
     
     public let firstName: String
     public let lastName: String
     
     public func configure(new managed: UserDTO) {
+        managed.id = id
         managed.firstName = firstName
         managed.lastName = lastName
     }
@@ -92,45 +92,81 @@ class BasePersistenceGatewayTests: XCTestCase {
     }
     
     func testSave() {
-        let ex = expectation(description: "Test saving")
-        
-        let cancellable = Publishers
-            .Sequence(sequence: testUsers)
-            .flatMap(gateway.save)
-            .sink(
-                receiveCompletion: {
-                    $0.error.map { XCTFail($0.localizedDescription) } ?? ex.fulfill()
-                },
-                receiveValue: {}
-            )
-        
-        waitForExpectations(timeout: 500)
+        waiting("Test saving") { ex in
+            Publishers
+                .Sequence(sequence: testUsers)
+                .flatMap(gateway.save)
+                .sink(
+                    receiveCompletion: {
+                        $0.error.map { XCTFail($0.localizedDescription) } ?? ex.fulfill()
+                    },
+                    receiveValue: {}
+                )
+        }
     }
 
     func testFetch() {
-        let ex = expectation(description: "Test fetching")
+        waiting("Test fetching") { exp in
+            makeWriterPublisher(for: testUsers)
+                .flatMap {
+                    self.gateway!.get(allOfType: TestUser.self)
+                }
+                .sink(
+                    receiveCompletion: {
+                        $0.error.map { XCTFail($0.localizedDescription) }
+                    },
+                    receiveValue: { array in
+                        if array.sorted(by: { $0.id < $1.id }) == testUsers.sorted(by: { $0.id < $1.id }) {
+                            exp.fulfill()
+                        } else {
+                            XCTFail()
+                        }
+                    }
+                )
+        }
+    }
+    
+    func testFetchWithPredicate() {
+        waiting("Test fetch with predicate") { exp in
+            makeWriterPublisher(for: testUsers)
+                .flatMap {
+                    self.gateway!.get(byIntId: testUsers[1].id)
+                }
+                .sink(
+                    receiveCompletion: {
+                        $0.error.map { XCTFail($0.localizedDescription) }
+                    },
+                    receiveValue: { (user: TestUser?) in
+                        if let user = user, testUsers[1].id == user.id {
+                            exp.fulfill()
+                        } else {
+                            XCTFail()
+                        }
+                    }
+                )
+            }
+    }
+    
+    func waiting<T: Cancellable>(_ message: String? = nil, timeout: TimeInterval = 500, _ exec: (XCTestExpectation) -> T) -> Void {
+        let exp = message == nil ? expectation(description: "") : expectation(description: message!)
         
-        let cancellable = Publishers
-            .Sequence(sequence: testUsers)
+        let something = exec(exp)
+        
+        waitForExpectations(timeout: timeout) {
+            $0.map {
+                something.cancel()
+                
+                XCTFail($0.localizedDescription)
+            }
+        }
+    }
+    
+    private func makeWriterPublisher<T: NSManagedObjectConvertible>(for data: [T]) -> AnyPublisher<Void, Error> {
+        Publishers
+            .Sequence(sequence: data)
             .flatMap(gateway.save)
             .collect()
-            .map { [gateway] _ in
-                gateway!.get(allOfType: TestUser.self)
-            }
-            .switchToLatest()
-            .sink(
-                receiveCompletion: {
-                    $0.error.map { XCTFail($0.localizedDescription) }
-                },
-                receiveValue: { array in
-                    if array == testUsers {
-                        ex.fulfill()
-                    } else {
-                        XCTFail()
-                    }
-                }
-            )
-        
-        waitForExpectations(timeout: 500)
+            .map { _ in }
+            .eraseToAnyPublisher()
     }
 }

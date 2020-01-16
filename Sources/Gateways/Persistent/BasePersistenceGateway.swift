@@ -90,8 +90,44 @@ class BasePersistenceGateway {
     func get<T: NSManagedObjectConvertible>(allOfType plainType: T.Type) -> AnyPublisher<[T], Error> {
         container.performReadingBackgroundTask { context in
             try context
-                .fetch(NSFetchRequest(entityName: T.ManagedEntity.name))
-                .compactMap { ($0 as? T.ManagedEntity)?.plain }
+                .fetch(NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name))
+                .map { $0.plain }
+        }
+    }
+    
+    func get<T: NSManagedObjectConvertible>(allOfType plainType: T.Type, using predicate: NSPredicate) -> AnyPublisher<[T], Error> {
+        container.performReadingBackgroundTask { context in
+            let req = NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name)
+            
+            req.predicate = predicate
+            
+            return try context
+                .fetch(req)
+                .map { $0.plain }
+        }
+    }
+    
+    func get<T: NSManagedObjectConvertible & Identifiable>(
+        byIntId id: T.ID
+    ) -> AnyPublisher<T?, Error> where T.ID: CVarArg & FixedWidthInteger {
+        container.performReadingBackgroundTask { context in
+            let req = NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name)
+            
+            req.predicate = NSPredicate(format: "id == %d", id)
+            
+            return try context.fetch(req).first?.plain
+        }
+    }
+    
+    func get<T: NSManagedObjectConvertible & Identifiable>(
+        byId id: T.ID
+    ) -> AnyPublisher<T?, Error> where T.ID: CVarArg {
+        container.performReadingBackgroundTask { context in
+            let req = NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name)
+            
+            req.predicate = NSPredicate(format: "id == %@", id)
+            
+            return try context.fetch(req).first?.plain
         }
     }
     
