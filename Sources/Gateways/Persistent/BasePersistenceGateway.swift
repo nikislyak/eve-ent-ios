@@ -108,29 +108,17 @@ class BasePersistenceGateway {
     }
     
     func get<T: NSManagedObjectConvertible & Identifiable>(
-        byIntId id: T.ID
-    ) -> AnyPublisher<T?, Error> where T.ID: CVarArg & FixedWidthInteger {
-        container.performReadingBackgroundTask { context in
-            let req = NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name)
-            
-            req.predicate = NSPredicate(format: "id == %d", id)
-            
-            return try context.fetch(req).first?.plain
-        }
-    }
-    
-    func get<T: NSManagedObjectConvertible & Identifiable>(
         byId id: T.ID
-    ) -> AnyPublisher<T?, Error> where T.ID: CVarArg {
+    ) -> AnyPublisher<T?, Error> where T.ID: CVarArg & PredicatePlaceholderProvider {
         container.performReadingBackgroundTask { context in
             let req = NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name)
             
-            req.predicate = NSPredicate(format: "id == %@", id)
+            req.predicate = NSPredicate(format: "id == \(T.ID.placeholder)", id)
             
             return try context.fetch(req).first?.plain
         }
     }
-    
+
     func save<T: NSManagedObjectConvertible>(_ plain: T) -> AnyPublisher<Void, Error> {
         container.performWritingBackgroundTask { context in
             T.ManagedEntity(context: context).map(plain.configure)

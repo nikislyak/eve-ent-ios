@@ -130,7 +130,7 @@ class BasePersistenceGatewayTests: XCTestCase {
         waiting("Test fetch with predicate") { exp in
             makeWriterPublisher(for: testUsers)
                 .flatMap {
-                    self.gateway!.get(byIntId: testUsers[1].id)
+                    self.gateway!.get(byId: testUsers[1].id)
                 }
                 .sink(
                     receiveCompletion: {
