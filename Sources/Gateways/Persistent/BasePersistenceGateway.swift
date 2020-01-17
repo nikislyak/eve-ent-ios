@@ -82,7 +82,7 @@ func performWritingBackgroundTask(
             childContext.perform {
                 do {
                     try exec(childContext)
-                    
+
                     if childContext.hasChanges {
                         try childContext.save()
                     }
@@ -91,15 +91,11 @@ func performWritingBackgroundTask(
                 }
                 
                 parentContext.perform {
-                    do {
+                    promise(Result {
                         if parentContext.hasChanges {
                             try parentContext.save()
                         }
-                        
-                        promise(.success(()))
-                    } catch {
-                        promise(.failure(error))
-                    }
+                    })
                 }
             }
         }
@@ -163,12 +159,12 @@ class BasePersistenceGateway {
     
     func listen<T: NSManagedObjectConvertible>(
         byId id: T.ID
-    ) -> AnyPublisher<T?, Never> where T.ID: CVarArg {
+    ) -> AnyPublisher<T?, Never> {
         NotificationCenter
             .default
             .publisher(for: .NSManagedObjectContextDidSave, object: parentContext)
             .map { notification in
-                let updatedObjects = notification.userInfo?[NSUpdatedObjectsKey] as? NSSet
+                let updatedObjects = notification.userInfo?[NSInsertedObjectsKey] as? NSSet
                 
                 return updatedObjects?
                     .compactMap { ($0 as? T.ManagedEntity)?.plain }

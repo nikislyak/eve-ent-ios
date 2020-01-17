@@ -293,6 +293,54 @@ class BasePersistenceGatewayTests: XCTestCase {
         }
     }
     
+    func testListen() {
+        let expectedUsers: [TestUser] = [
+            TestUser(id: testUsers[0].id, firstName: testUsers[0].firstName, lastName: testUsers[0].lastName, devices: testUsers[0].devices),
+            TestUser(id: testUsers[0].id, firstName: testUsers[0].firstName + "!", lastName: testUsers[0].lastName, devices: testUsers[0].devices),
+            TestUser(id: testUsers[0].id, firstName: testUsers[0].firstName, lastName: testUsers[0].lastName + "!", devices: testUsers[0].devices),
+        ]
+        
+        waiting("Test listen") { exp -> AnyCancellable in
+            var recordedUsers: [TestUser?] = []
+            
+            DispatchQueue.global().async {
+                let sem = DispatchSemaphore(value: 0)
+                
+                let c = self.gateway.save(expectedUsers[recordedUsers.count])
+                    .sink(
+                        receiveCompletion: { _ in sem.signal() },
+                        receiveValue: {}
+                    )
+                
+                sem.wait()
+            }
+            
+            return gateway
+                .listen(byId: testUsers[0].id)
+                .sink { (user: TestUser?) in
+                    recordedUsers.append(user)
+                    
+                    if recordedUsers == expectedUsers {
+                        exp.fulfill()
+                    } else if recordedUsers.count == 3 {
+                        XCTFail()
+                    } else {
+                        DispatchQueue.global().async {
+                            let sem = DispatchSemaphore(value: 0)
+                            
+                            let c = self.gateway.save(expectedUsers[recordedUsers.count])
+                                .sink(
+                                    receiveCompletion: { _ in sem.signal() },
+                                    receiveValue: {}
+                                )
+                            
+                            sem.wait()
+                        }
+                    }
+                }
+        }
+    }
+    
     func waiting<T: Cancellable>(_ message: String? = nil, timeout: TimeInterval = 1, _ exec: (XCTestExpectation) -> T) -> Void {
         let exp = message == nil ? expectation(description: "") : expectation(description: message!)
         
