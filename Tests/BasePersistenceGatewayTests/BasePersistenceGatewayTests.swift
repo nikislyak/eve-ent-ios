@@ -31,7 +31,7 @@ extension UserDTO: PlainEntityConvertible {
     }
 }
 
-public struct Device: NSManagedObjectConvertible, Hashable, Identifiable {
+public struct Device: NSManagedObjectConvertible, Hashable {
     public typealias ManagedEntity = DeviceDTO
     
     public let id: Int64
@@ -48,7 +48,7 @@ public struct Device: NSManagedObjectConvertible, Hashable, Identifiable {
     }
 }
 
-public struct TestUser: NSManagedObjectConvertible, Hashable, Identifiable {
+public struct TestUser: NSManagedObjectConvertible, Hashable {
     public typealias ManagedEntity = UserDTO
     
     public let id: Int64
@@ -96,7 +96,7 @@ final class TestCoreDataFactory: CoreDataFactory {
     
     private lazy var mom = NSManagedObjectModel(contentsOf: momUrl)!
     
-    private lazy var moc = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+    private lazy var moc = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
     
     private lazy var pc = with(NSPersistentContainer(name: "eve-ent-container", managedObjectModel: mom)) {
         $0.persistentStoreDescriptions = [
@@ -116,7 +116,7 @@ final class TestCoreDataFactory: CoreDataFactory {
         mom
     }
     
-    func makeManagedObjectContext() -> NSManagedObjectContext {
+    func makeChildManagedObjectContext() -> NSManagedObjectContext {
         moc
     }
     
@@ -146,7 +146,7 @@ class BasePersistenceGatewayTests: XCTestCase {
     func testSave() {
         waiting("Test saving") { ex in
             Publishers
-                .Sequence(sequence: testUsers)
+                .Sequence(sequence: testUsers.map { ($0, true) })
                 .flatMap(gateway.save)
                 .sink(
                     receiveCompletion: {
@@ -168,7 +168,7 @@ class BasePersistenceGatewayTests: XCTestCase {
                         $0.error.map { XCTFail($0.localizedDescription) }
                     },
                     receiveValue: { array in
-                        if array.sorted(by: { $0.id < $1.id }) == testUsers.sorted(by: { $0.id < $1.id }) {
+                        if array.sorted(by: \.id) == testUsers.sorted(by: \.id) {
                             exp.fulfill()
                         } else {
                             XCTFail()
@@ -210,7 +210,7 @@ class BasePersistenceGatewayTests: XCTestCase {
                         $0.error.map { XCTFail($0.localizedDescription) }
                     },
                     receiveValue: { (devices: [Device]) in
-                        if devices.sorted(by: { $0.id < $1.id }) == testDevices {
+                        if devices.sorted(by: \.id) == testDevices {
                             exp.fulfill()
                         } else {
                             XCTFail()
@@ -231,7 +231,59 @@ class BasePersistenceGatewayTests: XCTestCase {
                         $0.error.map { XCTFail($0.localizedDescription) }
                     },
                     receiveValue: { (devices: [Device]) in
-                        if devices.sorted(by: { $0.id < $1.id }) == [testDevices[0], testDevices[3]] {
+                        if devices.sorted(by: \.id) == [testDevices[0], testDevices[3]] {
+                            exp.fulfill()
+                        } else {
+                            XCTFail()
+                        }
+                    }
+                )
+        }
+    }
+    
+    func testOverwriteWithReplacement() {
+        let overwrittenDevices = testDevices.map { Device(id: $0.id, name: $0.name + "!") }
+        
+        waiting("Test overwrite with replacement") { exp in
+            makeWriterPublisher(for: testDevices)
+                .flatMap {
+                    self.makeWriterPublisher(for: overwrittenDevices)
+                }
+                .flatMap {
+                    self.gateway!.get(allOfType: Device.self)
+                }
+                .sink(
+                    receiveCompletion: {
+                        $0.error.map { XCTFail($0.localizedDescription) }
+                    },
+                    receiveValue: { (devices: [Device]) in
+                        if devices.sorted(by: \.id) == overwrittenDevices {
+                            exp.fulfill()
+                        } else {
+                            XCTFail()
+                        }
+                    }
+                )
+        }
+    }
+    
+    func testOverwriteWithoutReplacement() {
+        let overwrittenDevices = testDevices.map { Device(id: $0.id, name: $0.name + "!") }
+        
+        waiting("Test overwrite with replacement") { exp in
+            makeWriterPublisher(for: testDevices)
+                .flatMap {
+                    self.makeWriterPublisher(for: overwrittenDevices, replace: false)
+                }
+                .flatMap {
+                    self.gateway!.get(allOfType: Device.self)
+                }
+                .sink(
+                    receiveCompletion: {
+                        $0.error.map { XCTFail($0.localizedDescription) }
+                    },
+                    receiveValue: { (devices: [Device]) in
+                        if devices.sorted(by: \.id) != overwrittenDevices {
                             exp.fulfill()
                         } else {
                             XCTFail()
@@ -253,8 +305,8 @@ class BasePersistenceGatewayTests: XCTestCase {
         }
     }
     
-    private func makeWriterPublisher<T: NSManagedObjectConvertible>(for data: [T]) -> AnyPublisher<Void, Error> {
-        Just(data)
+    private func makeWriterPublisher<T: NSManagedObjectConvertible>(for data: [T], replace: Bool = true) -> AnyPublisher<Void, Error> {
+        Just((data, replace))
             .setFailureType(to: Error.self)
             .flatMap(gateway.save)
             .map { _ in }

@@ -30,7 +30,7 @@ enum PersistentModule {
 
 protocol CoreDataFactory {
     func makeManagedObjectModel() -> NSManagedObjectModel
-    func makeManagedObjectContext() -> NSManagedObjectContext
+    func makeChildManagedObjectContext() -> NSManagedObjectContext
     func makePersistentContainer() -> NSPersistentContainer
 }
 
@@ -41,7 +41,7 @@ final class CoreDataFactoryImpl: CoreDataFactory {
     
     private lazy var mom = NSManagedObjectModel(contentsOf: momUrl)!
     
-    private lazy var moc = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+    private lazy var moc = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
     
     private lazy var pc = with(NSPersistentContainer(name: "eve-ent-container", managedObjectModel: mom)) {
         $0.loadPersistentStores { desc, error in
@@ -55,7 +55,7 @@ final class CoreDataFactoryImpl: CoreDataFactory {
         mom
     }
     
-    func makeManagedObjectContext() -> NSManagedObjectContext {
+    func makeChildManagedObjectContext() -> NSManagedObjectContext {
         moc
     }
     
@@ -88,7 +88,7 @@ final class InfrastructureFactory {
     }
     
     private lazy var basePersistenceGateway = BasePersistenceGateway(
-        backgroundContext: coreDataFactory.makeManagedObjectContext(),
+        childContext: coreDataFactory.makeChildManagedObjectContext(),
         container: coreDataFactory.makePersistentContainer()
     )
     
