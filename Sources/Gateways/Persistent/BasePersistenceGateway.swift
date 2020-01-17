@@ -10,7 +10,7 @@ import Foundation
 import Combine
 import CoreData
 
-protocol PlainEntityConvertible: NSManagedObject {
+public protocol PlainEntityConvertible: NSManagedObject {
     associatedtype PlainEntity: NSManagedObjectConvertible where PlainEntity.ManagedEntity == Self
     
     var plain: PlainEntity { get }
@@ -22,21 +22,21 @@ extension PlainEntityConvertible {
     }
 }
 
-protocol NSManagedObjectConvertible {
+public protocol NSManagedObjectConvertible {
     associatedtype ManagedEntity: PlainEntityConvertible where ManagedEntity.PlainEntity == Self
     
-    func configure(new managed: ManagedEntity)
+    func createManaged(insertingIn context: NSManagedObjectContext) -> ManagedEntity
 }
 
 extension PlainEntityConvertible {
-    public init?(context: NSManagedObjectContext) {
+    public init?(moc: NSManagedObjectContext) {
         let name = String(describing: type(of: self))
         
-        guard let entity = NSEntityDescription.entity(forEntityName: name, in: context) else {
+        guard let entity = NSEntityDescription.entity(forEntityName: name, in: moc) else {
             return nil
         }
         
-        self.init(entity: entity, insertInto: context)
+        self.init(entity: entity, insertInto: moc)
     }
 }
 
@@ -121,14 +121,14 @@ class BasePersistenceGateway {
 
     func save<T: NSManagedObjectConvertible>(_ plain: T) -> AnyPublisher<Void, Error> {
         container.performWritingBackgroundTask { context in
-            T.ManagedEntity(context: context).map(plain.configure)
+            _ = plain.createManaged(insertingIn: context)
         }
     }
     
     func save<T: NSManagedObjectConvertible>(_ plains: [T]) -> AnyPublisher<Void, Error> {
         container.performWritingBackgroundTask { context in
             plains.forEach { plain in
-                T.ManagedEntity(context: context).map(plain.configure)
+                _ = plain.createManaged(insertingIn: context)
             }
         }
     }

@@ -2,7 +2,7 @@
 //  UserDTO+CoreDataProperties.swift
 //  Eve-Ent
 //
-//  Created by Nikita Kislyakov on 16.01.2020.
+//  Created by Nikita Kislyakov on 17.01.2020.
 //
 //
 
@@ -19,5 +19,23 @@ extension UserDTO {
     @NSManaged public var firstName: String
     @NSManaged public var id: Int64
     @NSManaged public var lastName: String
+    @NSManaged public var devices: NSSet
+
+}
+
+// MARK: Generated accessors for devices
+extension UserDTO {
+
+    @objc(addDevicesObject:)
+    @NSManaged public func addToDevices(_ value: DeviceDTO)
+
+    @objc(removeDevicesObject:)
+    @NSManaged public func removeFromDevices(_ value: DeviceDTO)
+
+    @objc(addDevices:)
+    @NSManaged public func addToDevices(_ values: NSSet)
+
+    @objc(removeDevices:)
+    @NSManaged public func removeFromDevices(_ values: NSSet)
 
 }

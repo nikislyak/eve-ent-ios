@@ -8,33 +8,85 @@
 import XCTest
 import CoreData
 import Combine
+import Overture
 @testable import Eve_Ent
 
-extension UserDTO: PlainEntityConvertible {
-    public var plain: TestUser {
-        .init(id: id, firstName: firstName, lastName: lastName)
+extension DeviceDTO: PlainEntityConvertible {
+    public var plain: Device {
+        .init(
+            id: id,
+            name: name
+        )
     }
 }
 
-public struct TestUser: NSManagedObjectConvertible, Equatable, Identifiable {
+extension UserDTO: PlainEntityConvertible {
+    public var plain: TestUser {
+        .init(
+            id: id,
+            firstName: firstName,
+            lastName: lastName,
+            devices: .init(devices.compactMap { ($0 as? DeviceDTO)?.plain })
+        )
+    }
+}
+
+public struct Device: NSManagedObjectConvertible, Hashable, Identifiable {
+    public typealias ManagedEntity = DeviceDTO
+    
+    public let id: Int64
+    
+    public let name: String
+    
+    public func createManaged(insertingIn context: NSManagedObjectContext) -> DeviceDTO {
+        let device = DeviceDTO(moc: context)
+        
+        device?.id = id
+        device?.name = name
+        
+        return device!
+    }
+}
+
+public struct TestUser: NSManagedObjectConvertible, Hashable, Identifiable {
     public typealias ManagedEntity = UserDTO
     
     public let id: Int64
     
     public let firstName: String
     public let lastName: String
+    public let devices: Set<Device>
     
-    public func configure(new managed: UserDTO) {
-        managed.id = id
-        managed.firstName = firstName
-        managed.lastName = lastName
+    public func createManaged(insertingIn context: NSManagedObjectContext) -> UserDTO {
+        let user = UserDTO(moc: context)
+        
+        user?.id = id
+        user?.firstName = firstName
+        user?.lastName = lastName
+        
+        user?.addToDevices(
+            NSSet(
+                array: .init(
+                    devices.map { $0.createManaged(insertingIn: context) }
+                )
+            )
+        )
+        
+        return user!
     }
 }
 
+let testDevices: [Device] = [
+    Device(id: 0, name: "iPhone 8"),
+    Device(id: 1, name: "iPhone 8 Plus"),
+    Device(id: 2, name: "iPhone 11"),
+    Device(id: 3, name: "iPhone 11 Pro"),
+]
+
 let testUsers: [TestUser] = [
-    TestUser(id: 0, firstName: "Makaley", lastName: "Kalkin"),
-    TestUser(id: 1, firstName: "Makaley1", lastName: "Kalkin1"),
-    TestUser(id: 2, firstName: "Makaley2", lastName: "Kalkin2"),
+    TestUser(id: 0, firstName: "Makaley", lastName: "Kalkin", devices: .init(arrayLiteral: testDevices[0], testDevices[3])),
+    TestUser(id: 1, firstName: "Makaley1", lastName: "Kalkin1", devices: .init(arrayLiteral: testDevices[1])),
+    TestUser(id: 2, firstName: "Makaley2", lastName: "Kalkin2", devices: .init(arrayLiteral: testDevices[2])),
 ]
 
 final class TestCoreDataFactory: CoreDataFactory {
@@ -109,7 +161,7 @@ class BasePersistenceGatewayTests: XCTestCase {
         waiting("Test fetching") { exp in
             makeWriterPublisher(for: testUsers)
                 .flatMap {
-                    self.gateway!.get(allOfType: TestUser.self)
+                    self.gateway.get(allOfType: TestUser.self)
                 }
                 .sink(
                     receiveCompletion: {
@@ -130,7 +182,7 @@ class BasePersistenceGatewayTests: XCTestCase {
         waiting("Test fetch with predicate") { exp in
             makeWriterPublisher(for: testUsers)
                 .flatMap {
-                    self.gateway!.get(byId: testUsers[1].id)
+                    self.gateway.get(byId: testUsers[1].id)
                 }
                 .sink(
                     receiveCompletion: {
@@ -147,25 +199,64 @@ class BasePersistenceGatewayTests: XCTestCase {
             }
     }
     
-    func waiting<T: Cancellable>(_ message: String? = nil, timeout: TimeInterval = 500, _ exec: (XCTestExpectation) -> T) -> Void {
+    func testFetchDevices() {
+        waiting("Test fetch devices for user with id") { exp in
+            makeWriterPublisher(for: testDevices)
+                .flatMap {
+                    self.gateway.get(allOfType: Device.self)
+                }
+                .sink(
+                    receiveCompletion: {
+                        $0.error.map { XCTFail($0.localizedDescription) }
+                    },
+                    receiveValue: { (devices: [Device]) in
+                        if devices.sorted(by: { $0.id < $1.id }) == testDevices {
+                            exp.fulfill()
+                        } else {
+                            XCTFail()
+                        }
+                    }
+                )
+        }
+    }
+    
+    func testFetchDevicesForUserWithId() {
+        waiting("Test fetch devices for user with id") { exp in
+            makeWriterPublisher(for: testUsers)
+                .flatMap {
+                    self.gateway.get(allOfType: Device.self, using: NSPredicate(format: "user.id == %d", testUsers[0].id))
+                }
+                .sink(
+                    receiveCompletion: {
+                        $0.error.map { XCTFail($0.localizedDescription) }
+                    },
+                    receiveValue: { (devices: [Device]) in
+                        if devices.sorted(by: { $0.id < $1.id }) == [testDevices[0], testDevices[3]] {
+                            exp.fulfill()
+                        } else {
+                            XCTFail()
+                        }
+                    }
+                )
+        }
+    }
+    
+    func waiting<T: Cancellable>(_ message: String? = nil, timeout: TimeInterval = 1, _ exec: (XCTestExpectation) -> T) -> Void {
         let exp = message == nil ? expectation(description: "") : expectation(description: message!)
         
         let something = exec(exp)
         
         waitForExpectations(timeout: timeout) {
-            $0.map {
+            $0.map { _ in
                 something.cancel()
-                
-                XCTFail($0.localizedDescription)
             }
         }
     }
     
     private func makeWriterPublisher<T: NSManagedObjectConvertible>(for data: [T]) -> AnyPublisher<Void, Error> {
-        Publishers
-            .Sequence(sequence: data)
+        Just(data)
+            .setFailureType(to: Error.self)
             .flatMap(gateway.save)
-            .collect()
             .map { _ in }
             .eraseToAnyPublisher()
     }

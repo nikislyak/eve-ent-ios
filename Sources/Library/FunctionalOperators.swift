@@ -13,11 +13,9 @@ precedencegroup ForwardApplication {
 
 infix operator |> : ForwardApplication
 
-func |> <A, B>(
-    _ o: A,
-    g: @escaping (A) -> B
-) -> B {
-    return g(o)
+@discardableResult
+func |> <A, B>(_ o: A, g: @escaping (A) -> B) -> B {
+    g(o)
 }
 
 precedencegroup KeyPathSetting {
