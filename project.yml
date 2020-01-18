@@ -81,4 +81,5 @@ targets:
       - path: Tests
     dependencies:
       - target: Eve-Ent
+      - package: Overture
       - sdk: CoreData.framework
