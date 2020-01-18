@@ -46,6 +46,11 @@ public struct Device: NSManagedObjectConvertible, Hashable {
         
         return device!
     }
+    
+    public func edit(existing managed: DeviceDTO) {
+        managed.id = id
+        managed.name = name
+    }
 }
 
 public struct TestUser: NSManagedObjectConvertible, Hashable {
@@ -73,6 +78,24 @@ public struct TestUser: NSManagedObjectConvertible, Hashable {
         )
         
         return user!
+    }
+    
+    public func edit(existing managed: UserDTO) {
+        managed.id = id
+        managed.firstName = firstName
+        managed.lastName = lastName
+        
+        let seq = managed.devices.compactMap { erased -> (DeviceDTO.ID, DeviceDTO)? in
+            let dto = erased as? DeviceDTO
+            
+            return zip(dto?.id, dto)
+        }
+        
+        let devicesDict = Dictionary(seq) { first, _ in first }
+        
+        devices.forEach { device in
+            devicesDict[device.id].map(device.edit)
+        }
     }
 }
 
@@ -317,27 +340,32 @@ class BasePersistenceGatewayTests: XCTestCase {
             
             return gateway
                 .listen(byId: testUsers[0].id)
-                .sink { (user: TestUser?) in
-                    recordedUsers.append(user)
-                    
-                    if recordedUsers == expectedUsers {
-                        exp.fulfill()
-                    } else if recordedUsers.count == 3 {
-                        XCTFail()
-                    } else {
-                        DispatchQueue.global().async {
-                            let sem = DispatchSemaphore(value: 0)
-                            
-                            let c = self.gateway.save(expectedUsers[recordedUsers.count])
-                                .sink(
-                                    receiveCompletion: { _ in sem.signal() },
-                                    receiveValue: {}
-                                )
-                            
-                            sem.wait()
+                .sink(
+                    receiveCompletion: {
+                        $0.error.map { XCTFail($0.localizedDescription) }
+                    },
+                    receiveValue: { (user: TestUser?) in
+                        recordedUsers.append(user)
+                        
+                        if recordedUsers == expectedUsers {
+                            exp.fulfill()
+                        } else if recordedUsers.count == 3 {
+                            XCTFail()
+                        } else {
+                            DispatchQueue.global().async {
+                                let sem = DispatchSemaphore(value: 0)
+                                
+                                let c = self.gateway.save(expectedUsers[recordedUsers.count])
+                                    .sink(
+                                        receiveCompletion: { _ in sem.signal() },
+                                        receiveValue: {}
+                                    )
+                                
+                                sem.wait()
+                            }
                         }
                     }
-                }
+                )
         }
     }
     

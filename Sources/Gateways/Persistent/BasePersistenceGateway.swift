@@ -31,6 +31,7 @@ public protocol NSManagedObjectConvertible: Identifiable {
         ManagedEntity.ID == ID
     
     func createManaged(insertingIn context: NSManagedObjectContext) -> ManagedEntity
+    func edit(existing managed: ManagedEntity)
 }
 
 extension PlainEntityConvertible {
@@ -159,21 +160,24 @@ class BasePersistenceGateway {
     
     func listen<T: NSManagedObjectConvertible>(
         byId id: T.ID
-    ) -> AnyPublisher<T?, Never> {
+    ) -> AnyPublisher<T?, Error> {
         NotificationCenter
             .default
             .publisher(for: .NSManagedObjectContextDidSave, object: parentContext)
             .map { notification in
-                let updatedObjects = notification.userInfo?[NSInsertedObjectsKey] as? NSSet
+                let updatedObjects = notification.userInfo?[NSUpdatedObjectsKey] as? NSSet
                 
                 return updatedObjects?
-                    .compactMap { ($0 as? T.ManagedEntity)?.plain }
+                    .compactMap { ($0 as? T.ManagedEntity) }
                     .first { $0.id == id }
+                    .map { $0.plain }
             }
+            .setFailureType(to: Error.self)
+            .prepend(get(byId: id))
             .eraseToAnyPublisher()
     }
 
-    func save<T: NSManagedObjectConvertible>(_ plain: T, shouldReplaceExisting: Bool = true) -> AnyPublisher<Void, Error> {
+    func save<T: NSManagedObjectConvertible>(_ plain: T, shouldEditExisting: Bool = true) -> AnyPublisher<Void, Error> {
         performWritingBackgroundTask(
             on: childContext,
             pushingChangesTo: parentContext
@@ -184,15 +188,17 @@ class BasePersistenceGateway {
             
             let existing = try context.fetch(req)
             
-            if shouldReplaceExisting {
-                existing.forEach(context.delete)
+            let existingDict = Dictionary(existing.map { ($0.id, $0) }) { first, _ in first }
+            
+            if shouldEditExisting {
+                existingDict[plain.id].map(plain.edit)
                 
                 _ = plain.createManaged(insertingIn: context)
             }
         }
     }
     
-    func save<T: NSManagedObjectConvertible>(_ plains: [T], shouldReplaceExisting: Bool = true) -> AnyPublisher<Void, Error> {
+    func save<T: NSManagedObjectConvertible>(_ plains: [T], shouldEditExisting: Bool = true) -> AnyPublisher<Void, Error> {
         performWritingBackgroundTask(
             on: childContext,
             pushingChangesTo: parentContext
@@ -203,21 +209,17 @@ class BasePersistenceGateway {
             
             let existing = try context.fetch(req)
             
-            if shouldReplaceExisting {
-                existing.forEach(context.delete)
+            let existingDict = Dictionary(existing.map { ($0.id, $0) }) { first, _ in first }
+            let plainsDict = Dictionary(plains.map { ($0.id, $0) }) { first, _ in first }
+            
+            if shouldEditExisting {
+                existing.forEach { managed in
+                    plainsDict[managed.id]?.edit(existing: managed)
+                }
             }
             
-            let plainsToInsert: [T]
-            
-            if shouldReplaceExisting {
-                plainsToInsert = plains
-            } else {
-                plainsToInsert = plains
-                    .filter { plain in
-                        !existing
-                            .map { $0.plain.id }
-                            .contains(plain.id)
-                    }
+            let plainsToInsert = plainsDict.values.compactMap { plain in
+                existingDict[plain.id] == nil ? plain : nil
             }
             
             plainsToInsert.forEach { plain in
