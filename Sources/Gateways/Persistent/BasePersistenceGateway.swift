@@ -192,7 +192,9 @@ class BasePersistenceGateway {
             
             if shouldEditExisting {
                 existingDict[plain.id].map(plain.edit)
-                
+            }
+            
+            if existingDict[plain.id] == nil {
                 _ = plain.createManaged(insertingIn: context)
             }
         }
@@ -218,12 +220,10 @@ class BasePersistenceGateway {
                 }
             }
             
-            let plainsToInsert = plainsDict.values.compactMap { plain in
-                existingDict[plain.id] == nil ? plain : nil
-            }
-            
-            plainsToInsert.forEach { plain in
-                _ = plain.createManaged(insertingIn: context)
+            plainsDict.values.forEach { plain in
+                if existingDict[plain.id] == nil {
+                    _ = plain.createManaged(insertingIn: context)
+                }
             }
         }
     }
