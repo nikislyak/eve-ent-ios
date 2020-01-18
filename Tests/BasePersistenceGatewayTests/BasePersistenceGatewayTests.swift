@@ -339,12 +339,12 @@ class BasePersistenceGatewayTests: XCTestCase {
             }
             
             return gateway
-                .listen(byId: testUsers[0].id)
+                .listenUpdates(byId: testUsers[0].id)
                 .sink(
                     receiveCompletion: {
                         $0.error.map { XCTFail($0.localizedDescription) }
                     },
-                    receiveValue: { (user: TestUser?) in
+                    receiveValue: { (user: TestUser) in
                         recordedUsers.append(user)
                         
                         if recordedUsers == expectedUsers {

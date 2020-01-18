@@ -158,9 +158,9 @@ class BasePersistenceGateway {
         }
     }
     
-    func listen<T: NSManagedObjectConvertible>(
+    func listenUpdates<T: NSManagedObjectConvertible>(
         byId id: T.ID
-    ) -> AnyPublisher<T?, Error> {
+    ) -> AnyPublisher<T, Error> {
         NotificationCenter
             .default
             .publisher(for: .NSManagedObjectContextDidSave, object: parentContext)
@@ -174,6 +174,7 @@ class BasePersistenceGateway {
             }
             .setFailureType(to: Error.self)
             .prepend(get(byId: id))
+            .compactMap { $0 }
             .eraseToAnyPublisher()
     }
 
