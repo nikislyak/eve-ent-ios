@@ -15,9 +15,9 @@ public struct User: NSManagedObjectConvertible, Hashable {
     
     public let id: Int64
     
-    public let firstName: String
-    public let lastName: String
-    public let devices: Set<Device>
+    public var firstName: String
+    public var lastName: String
+    public var devices: Set<Device>
     
     public func createManaged(insertingIn context: NSManagedObjectContext) -> UserDTO {
         let user = UserDTO(moc: context)

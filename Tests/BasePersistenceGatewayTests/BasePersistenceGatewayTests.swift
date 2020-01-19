@@ -60,45 +60,87 @@ final class TestCoreDataFactory: CoreDataFactory {
     }
 }
 
-class BasePersistenceGatewayTests: XCTestCase {
+class CoreDataGatewayTests: XCTestCase {
     private lazy var coreDataFactory = TestCoreDataFactory()
     private lazy var infrastructureFactory = InfrastructureFactory(coreDataFactory: coreDataFactory)
     
-    private var gateway: BasePersistenceGateway!
+    private var coreData: CoreDataGateway!
 
     override func setUp() {
         super.setUp()
         
-        gateway = infrastructureFactory.makeBasePersistenceGateway()
+        coreData = infrastructureFactory.makeCoreDataGateway()
     }
 
     override func tearDown() {
-        gateway = nil
+        coreData = nil
         
         super.tearDown()
     }
     
-    func testSave() {
-        waiting("Test saving") { ex in
-            Publishers
-                .Sequence(sequence: testUsers.map { ($0, true) })
-                .flatMap(gateway.save)
-                .sink(
-                    receiveCompletion: {
-                        $0.error.map { XCTFail($0.localizedDescription) } ?? ex.fulfill()
-                    },
-                    receiveValue: {}
-                )
+    func testSaveOne() {
+        waiting("Test save one") { exp in
+            self.coreData.save(testUsers[0], shouldEditExisting: true)
+                .flatMap {
+                    self.coreData.getAll()
+                }
+                .sink { (users: [User]) in
+                    if users == [testUsers[0]] {
+                        exp.fulfill()
+                    } else {
+                        XCTFail()
+                    }
+                }
+        }
+    }
+    
+    func testSaveMany() {
+        waiting("Test save many") { exp in
+            self.coreData.save([testUsers[0]], shouldEditExisting: true)
+                .flatMap {
+                    self.coreData.getAll()
+                }
+                .sink { (users: [User]) in
+                    if users == [testUsers[0]] {
+                        exp.fulfill()
+                    } else {
+                        XCTFail()
+                    }
+                }
+        }
+    }
+    
+    func testEditOne() {
+        var editedUser = testUsers[0]
+        
+        editedUser.firstName = "Nikita"
+        editedUser.lastName = "Kislyakov"
+        
+        waiting("Test edit one") { exp in
+            self.coreData.save(testUsers[0], shouldEditExisting: true)
+                .flatMap {
+                    self.coreData.save(editedUser, shouldEditExisting: true)
+                }
+                .flatMap {
+                    self.coreData.get(byID: editedUser.id)
+                }
+                .sink { (user: User?) in
+                    if user == editedUser {
+                        exp.fulfill()
+                    } else {
+                        XCTFail()
+                    }
+                }
         }
     }
 
     func testFetch() {
         waiting("Test fetching") { exp in
-            makeWriterPublisher(for: testUsers)
+            save(testUsers)
                 .flatMap {
-                    self.gateway.get(allOfType: User.self)
+                    self.coreData.getAll()
                 }
-                .sink { array in
+                .sink { (array: [User]) in
                     if array.sorted(by: \.id) == testUsers.sorted(by: \.id) {
                         exp.fulfill()
                     } else {
@@ -110,9 +152,9 @@ class BasePersistenceGatewayTests: XCTestCase {
     
     func testFetchWithPredicate() {
         waiting("Test fetch with predicate") { exp in
-            makeWriterPublisher(for: testUsers)
+            save(testUsers)
                 .flatMap {
-                    self.gateway.get(byId: testUsers[1].id)
+                    self.coreData.get(byID: testUsers[1].id)
                 }
                 .sink { (user: User?) in
                     if let user = user, testUsers[1].id == user.id {
@@ -126,9 +168,9 @@ class BasePersistenceGatewayTests: XCTestCase {
     
     func testFetchDevices() {
         waiting("Test fetch devices for user with id") { exp in
-            makeWriterPublisher(for: testDevices)
+            save(testDevices)
                 .flatMap {
-                    self.gateway.get(allOfType: Device.self)
+                    self.coreData.getAll()
                 }
                 .sink { (devices: [Device]) in
                     if devices.sorted(by: \.id) == testDevices {
@@ -142,9 +184,9 @@ class BasePersistenceGatewayTests: XCTestCase {
     
     func testFetchDevicesForUserWithId() {
         waiting("Test fetch devices for user with id") { exp in
-            makeWriterPublisher(for: testUsers)
+            save(testUsers)
                 .flatMap {
-                    self.gateway.get(allOfType: Device.self, using: NSPredicate(format: "user.id == %d", testUsers[0].id))
+                    self.coreData.getAll(using: NSPredicate(format: "user.id == %d", testUsers[0].id))
                 }
                 .sink { (devices: [Device]) in
                     if devices.sorted(by: \.id) == [testDevices[0], testDevices[3]] {
@@ -160,12 +202,12 @@ class BasePersistenceGatewayTests: XCTestCase {
         let overwrittenDevices = testDevices.map { Device(id: $0.id, name: $0.name + "!") }
         
         waiting("Test overwrite with replacement") { exp in
-            makeWriterPublisher(for: testDevices)
+            save(testDevices)
                 .flatMap {
-                    self.makeWriterPublisher(for: overwrittenDevices)
+                    self.save(overwrittenDevices)
                 }
                 .flatMap {
-                    self.gateway!.get(allOfType: Device.self)
+                    self.coreData.getAll()
                 }
                 .sink { (devices: [Device]) in
                     if devices.sorted(by: \.id) == overwrittenDevices {
@@ -181,12 +223,12 @@ class BasePersistenceGatewayTests: XCTestCase {
         let overwrittenDevices = testDevices.map { Device(id: $0.id, name: $0.name + "!") }
         
         waiting("Test overwrite with replacement") { exp in
-            makeWriterPublisher(for: testDevices)
+            save(testDevices)
                 .flatMap {
-                    self.makeWriterPublisher(for: overwrittenDevices, replace: false)
+                    self.save(overwrittenDevices, replace: false)
                 }
                 .flatMap {
-                    self.gateway!.get(allOfType: Device.self)
+                    self.coreData.getAll()
                 }
                 .sink { (devices: [Device]) in
                     if devices.sorted(by: \.id) != overwrittenDevices {
@@ -211,7 +253,7 @@ class BasePersistenceGatewayTests: XCTestCase {
             DispatchQueue.global().async {
                 let sem = DispatchSemaphore(value: 0)
                 
-                let c = self.gateway.save(expectedUsers[recordedUsers.count])
+                let c = self.coreData.save(expectedUsers[recordedUsers.count])
                     .sink(
                         receiveCompletion: { _ in sem.signal() },
                         receiveValue: {}
@@ -220,8 +262,8 @@ class BasePersistenceGatewayTests: XCTestCase {
                 sem.wait()
             }
             
-            return gateway
-                .listenUpdates(byId: testUsers[0].id)
+            return coreData
+                .listenUpdates(byID: testUsers[0].id)
                 .sink { (user: User) in
                     recordedUsers.append(user)
                     
@@ -233,7 +275,7 @@ class BasePersistenceGatewayTests: XCTestCase {
                         DispatchQueue.global().async {
                             let sem = DispatchSemaphore(value: 0)
                             
-                            let c = self.gateway.save(expectedUsers[recordedUsers.count])
+                            let c = self.coreData.save(expectedUsers[recordedUsers.count])
                                 .sink(
                                     receiveCompletion: { _ in sem.signal() },
                                     receiveValue: {}
@@ -246,22 +288,29 @@ class BasePersistenceGatewayTests: XCTestCase {
         }
     }
     
-    func waiting<T: Cancellable>(_ message: String? = nil, timeout: TimeInterval = 1, _ exec: (XCTestExpectation) -> T) -> Void {
-        let exp = message == nil ? expectation(description: "") : expectation(description: message!)
-        
-        let something = exec(exp)
-        
-        waitForExpectations(timeout: timeout) {
-            $0.map { _ in
-                something.cancel()
-            }
+    func testDeleteAll() {
+        waiting("Test delete all") { exp in
+            save(testUsers)
+                .flatMap {
+                    self.coreData.deleteAll(ofType: User.self)
+                }
+                .flatMap {
+                    self.coreData.getAll()
+                }
+                .sink { (users: [User]) in
+                    if users.isEmpty {
+                        exp.fulfill()
+                    } else {
+                        XCTFail()
+                    }
+                }
         }
     }
 
-    private func makeWriterPublisher<T: NSManagedObjectConvertible>(for data: [T], replace: Bool = true) -> AnyPublisher<Void, Error> {
+    private func save<T: NSManagedObjectConvertible>(_ data: [T], replace: Bool = true) -> AnyPublisher<Void, Error> {
         Just((data, replace))
             .setFailureType(to: Error.self)
-            .flatMap(gateway.save)
+            .flatMap(coreData.save)
             .map { _ in }
             .eraseToAnyPublisher()
     }

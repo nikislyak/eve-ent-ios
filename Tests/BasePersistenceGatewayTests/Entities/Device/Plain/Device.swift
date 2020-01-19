@@ -14,7 +14,7 @@ public struct Device: NSManagedObjectConvertible, Hashable {
     
     public let id: Int64
     
-    public let name: String
+    public var name: String
     
     public func createManaged(insertingIn context: NSManagedObjectContext) -> DeviceDTO {
         let device = DeviceDTO(moc: context)

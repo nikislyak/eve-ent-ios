@@ -25,4 +25,18 @@ extension Publisher {
             }
         )
     }
+    
+    func sinkCompletion(_ fulfill: @escaping () -> Void) -> AnyCancellable {
+        sink(
+            receiveCompletion: { completion in
+                switch completion {
+                case let .failure(error):
+                    XCTFail(error.localizedDescription)
+                case .finished:
+                    fulfill()
+                }
+            },
+            receiveValue: { _ in }
+        )
+    }
 }

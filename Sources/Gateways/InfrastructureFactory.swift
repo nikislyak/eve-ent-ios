@@ -87,13 +87,13 @@ final class InfrastructureFactory {
         self.coreDataFactory = coreDataFactory
     }
     
-    private lazy var basePersistenceGateway = BasePersistenceGateway(
+    private lazy var coreDataGateway = CoreDataGateway(
         childContext: coreDataFactory.makeChildManagedObjectContext(),
         container: coreDataFactory.makePersistentContainer()
     )
     
-    func makeBasePersistenceGateway() -> BasePersistenceGateway {
-        basePersistenceGateway
+    func makeCoreDataGateway() -> CoreDataGateway {
+        coreDataGateway
     }
     
     func makeRouter() -> Router {
