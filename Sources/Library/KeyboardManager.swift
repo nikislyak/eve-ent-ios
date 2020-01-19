@@ -15,7 +15,7 @@ public protocol KeyboardManagable: UIViewController {
 }
 
 private extension Notification {
-    var hide: Bool {
+    var willHide: Bool {
         name == UIResponder.keyboardWillHideNotification
     }
 }
@@ -46,6 +46,10 @@ open class KeyboardManager {
                         ),
                         NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
                 )
+                .removeDuplicates { $0.0.willHide == $1.0.willHide }
+                .handleEvents(receiveOutput: { notification, _ in
+                    print("Will Show: ", !notification.willHide)
+                })
                 .sink { [weak self] showHide, changeFrame in
                     self?.handle(showHide: showHide, changeFrame: changeFrame)
                 }
@@ -53,10 +57,10 @@ open class KeyboardManager {
     }
     
     private func handle(showHide: Notification, changeFrame: Notification) {
-        let hide = showHide.hide
+        let willHide = showHide.willHide
         let animationData = extractAnimationData(from: changeFrame)
         
-        onKeyboardFrameChange(willHide: hide, animationData: animationData)
+        onKeyboardFrameChange(willHide: willHide, animationData: animationData)
     }
     
     public struct AnimationData {
@@ -87,13 +91,13 @@ open class ScrollViewInsetAdjustingKeyboardManager: KeyboardManager {
     open override func onKeyboardFrameChange(willHide: Bool, animationData: KeyboardManager.AnimationData) {
         adjustContentInset(
             on: viewController.view,
-            hide: willHide,
+            willHide: willHide,
             animationData: animationData
         )
         
         adjustContentOffset(
             on: viewController.view,
-            hide: willHide,
+            willHide: willHide,
             animationData: animationData
         )
     }
@@ -102,26 +106,28 @@ open class ScrollViewInsetAdjustingKeyboardManager: KeyboardManager {
     
     private func adjustContentInset(
         on view: UIView,
-        hide: Bool,
+        willHide: Bool,
         animationData: AnimationData
     ) {
         let scrollView = viewController.managedScrollView
         
-        if hide {
+        if willHide {
             scrollView.contentInset = initialInset
         } else {
+            let oldInset = scrollView.contentInset
+            
             scrollView.contentInset = .init(
-                top: initialInset.top,
-                left: initialInset.left,
-                bottom: initialInset.bottom + animationData.endFrame.height,
-                right: initialInset.right
+                top: oldInset.top,
+                left: oldInset.left,
+                bottom: oldInset.bottom + animationData.endFrame.height,
+                right: oldInset.right
             )
         }
     }
     
     private func adjustContentOffset(
         on view: UIView,
-        hide: Bool,
+        willHide: Bool,
         animationData: AnimationData
     ) {
         guard let mostBottomView = viewController.mostBottomView else {
@@ -130,20 +136,20 @@ open class ScrollViewInsetAdjustingKeyboardManager: KeyboardManager {
         
         let scrollView = viewController.managedScrollView
         
-        var newVisibleRect = view.frame
-        
-        if !hide {
-            let keyboardHeight = animationData.endFrame.height
+        if !willHide {
+            let mostBottomViewConvertedFrame = view.convert(mostBottomView.frame, from: mostBottomView)
             
-            newVisibleRect.size.height -= keyboardHeight
-            
-            if !newVisibleRect.contains(mostBottomView.frame) {
-                let topLeftCorner = mostBottomView.frame.origin.y
-                let viewHeight = mostBottomView.frame.size.height + 8
-                
-                scrollView.setContentOffset(
-                    .init(x: 0, y: topLeftCorner + viewHeight - keyboardHeight),
-                    animated: true
+            if animationData.endFrame.contains(mostBottomViewConvertedFrame) {
+                UIView.animate(
+                    withDuration: animationData.duration,
+                    delay: 0,
+                    options: animationData.options,
+                    animations: {
+                        scrollView.contentOffset = .init(
+                            x: 0,
+                            y: mostBottomView.frame.origin.y + 8
+                        )
+                    }
                 )
             }
         }

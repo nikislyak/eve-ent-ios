@@ -63,7 +63,11 @@ public class AuthView: UIView {
     typealias Design = AuthViewDesign
     
     var activeTextInput: UIView? {
-        [blockView.view.emailTextField, blockView.view.emailTextField].first(where: ^\.isFirstResponder)
+        [
+            blockView.view.emailTextField,
+            blockView.view.passwordTextField
+        ]
+        .first(where: ^\.isFirstResponder)
     }
     
     let scrollView = UIScrollView()
@@ -105,6 +109,7 @@ public class AuthView: UIView {
         
         scrollView.sv(
             stackView.arranged(
+                wrapperView,
                 blockView,
                 loginBtn
             )
@@ -128,6 +133,8 @@ public class AuthView: UIView {
         
         stackView.centerInContainer()
         stackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor).isActive = true
+        
+        wrapperView.height(300)
         
         loginBtn.Height == 40
         blockView.Height == 100
