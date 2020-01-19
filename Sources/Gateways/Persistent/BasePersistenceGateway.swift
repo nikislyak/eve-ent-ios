@@ -150,11 +150,7 @@ class BasePersistenceGateway {
             on: childContext,
             receivingFrom: parentContext
         ) { context in
-            let req = NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name)
-            
-            req.predicate = NSPredicate(format: "id == \(T.ManagedEntity.ID.placeholder)", argumentArray: [id])
-            
-            return try context.fetch(req).first?.plain
+            try context.fetch(makeFetchRequest(for: T.self, byId: id)).first?.plain
         }
     }
     
@@ -183,13 +179,9 @@ class BasePersistenceGateway {
             on: childContext,
             pushingChangesTo: parentContext
         ) { context in
-            let req = NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name)
+            let existing = try context.fetch(makeFetchRequest(for: T.self, byId: plain.id))
             
-            req.predicate = NSPredicate(format: "id == \(T.ManagedEntity.ID.placeholder)", argumentArray: [plain.id])
-            
-            let existing = try context.fetch(req)
-            
-            let existingDict = Dictionary(existing.map { ($0.id, $0) }) { first, _ in first }
+            let existingDict = Dictionary(removingDuplicatesFrom: existing)
             
             if shouldEditExisting {
                 existingDict[plain.id].map(plain.edit)
@@ -206,14 +198,10 @@ class BasePersistenceGateway {
             on: childContext,
             pushingChangesTo: parentContext
         ) { context in
-            let req = NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name)
+            let existing = try context.fetch(makeFetchRequest(for: T.self, byIds: plains.map { $0.id }))
             
-            req.predicate = NSPredicate(format: "id IN %@", plains.map { $0.id })
-            
-            let existing = try context.fetch(req)
-            
-            let existingDict = Dictionary(existing.map { ($0.id, $0) }) { first, _ in first }
-            let plainsDict = Dictionary(plains.map { ($0.id, $0) }) { first, _ in first }
+            let existingDict = Dictionary(removingDuplicatesFrom: existing)
+            let plainsDict = Dictionary(removingDuplicatesFrom: plains)
             
             if shouldEditExisting {
                 existing.forEach { managed in
@@ -227,5 +215,60 @@ class BasePersistenceGateway {
                 }
             }
         }
+    }
+    
+    func delete<T: NSManagedObjectConvertible>(_ plainType: T.Type, byId id: T.ID) -> AnyPublisher<Void, Error> {
+        performWritingBackgroundTask(
+            on: childContext,
+            pushingChangesTo: parentContext
+        ) { context in
+            let existing = try context.fetch(makeFetchRequest(for: plainType, byId: id))
+            
+            let existingDict = Dictionary(removingDuplicatesFrom: existing)
+            
+            existingDict[id].map(context.delete)
+        }
+    }
+    
+    func delete<T: NSManagedObjectConvertible>(allOfType plainType: T.Type) -> AnyPublisher<Void, Error> {
+        performWritingBackgroundTask(
+            on: childContext,
+            pushingChangesTo: parentContext
+        ) { context in
+            let existing = try context.fetch(NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name))
+            
+            existing.forEach(context.delete)
+        }
+    }
+    
+    func delete<T: NSManagedObjectConvertible>(_ plainType: T.Type, byIds ids: [T.ID]) -> AnyPublisher<Void, Error> {
+        performWritingBackgroundTask(
+            on: childContext,
+            pushingChangesTo: parentContext
+        ) { context in
+            
+        }
+    }
+}
+
+private func makeFetchRequest<T: NSManagedObjectConvertible>(for plainType: T.Type, byId id: T.ID) -> NSFetchRequest<T.ManagedEntity> {
+    let req = NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name)
+    
+    req.predicate = NSPredicate(format: "id == \(T.ManagedEntity.ID.placeholder)", argumentArray: [id])
+    
+    return req
+}
+
+private func makeFetchRequest<T: NSManagedObjectConvertible>(for plainType: T.Type, byIds ids: [T.ID]) -> NSFetchRequest<T.ManagedEntity> {
+    let req = NSFetchRequest<T.ManagedEntity>(entityName: T.ManagedEntity.name)
+    
+    req.predicate = NSPredicate(format: "id IN %@", ids)
+    
+    return req
+}
+
+extension Dictionary {
+    init<S: Sequence>(removingDuplicatesFrom sequence: S) where S.Element: Identifiable, Key == S.Element.ID, Value == S.Element {
+        self = .init(sequence.map { ($0.id, $0) }) { first, _ in first }
     }
 }
