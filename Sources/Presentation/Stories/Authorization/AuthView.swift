@@ -68,6 +68,10 @@ public class AuthView: UIView {
     
     let scrollView = UIScrollView()
     let stackView = UIStackView()
+        |> \.spacing .~ 10
+        |> \.isLayoutMarginsRelativeArrangement .~ true
+        |> \.layoutMargins .~ UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+    let wrapperView = UIView()
     
     public let blockView =
         VisualEffectContainer(view: TextFieldBlock(), effect: UIBlurEffect(style: .systemChromeMaterialDark))
@@ -91,12 +95,11 @@ public class AuthView: UIView {
         super.init(frame: frame)
         self.backgroundColor = .white
 
-        self.insertSubview(layersView, at: 0)
-        self.insertSubview(scrollView, at: 1)
-        scrollView.insertSubview(stackView, at: 0)
-        stackView.addArrangedSubview(blockView)
-        stackView.addArrangedSubview(loginBtn)
-        stackView.arra
+        sv(layersView)
+        self.insertSubview(scrollView, aboveSubview: layersView)
+        scrollView.sv(wrapperView.sv(stackView))
+        stackView.arranged(blockView, loginBtn)
+        
         
         addGestureRecognizer(
             UITapGestureRecognizer(target: self, action: #selector(UIView.endEditing))
@@ -114,15 +117,14 @@ public class AuthView: UIView {
         layersView.fillContainer()
         scrollView.fillContainer()
         
+        wrapperView.Top == scrollView.Top
+        wrapperView.Left == scrollView.Left
+        wrapperView.Height == Height
+        wrapperView.Width == Width
+        stackView.centerInContainer()
+        stackView.Width == Width
         loginBtn.Height == 40
-        loginBtn.Left == keyboardLayout.Left + 10
-        loginBtn.Right == keyboardLayout.Right - 10
-        loginBtn.Bottom == keyboardLayout.Bottom - 10
-        
         blockView.Height == 100
-        blockView.Left == keyboardLayout.Left + 10
-        blockView.Right == keyboardLayout.Right - 10
-        blockView.Bottom == loginBtn.Top - 10
     }
     
     private func addGlareEmitter() {
