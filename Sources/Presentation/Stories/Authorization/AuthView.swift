@@ -126,7 +126,7 @@ public class AuthView: UIView {
     
     private func setupConstraints() {
         layersView.fillContainer()
-        scrollView.stretchToSafeArea(of: self)
+        scrollView.top(0).left(0).right(0).bottom(toSafeAreaOf: self, 0)
         
         stackView.centerInContainer()
         stackView.Width == scrollView.Width
