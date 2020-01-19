@@ -10,6 +10,9 @@ import UIKit
 import Combine
 
 class AuthController: BaseController<AuthView>, KeyboardManagable {
+    override class var keyboardManagerClass: KeyboardManager.Type {
+        SafeAreaAdjustingKeyboardManager.self
+    }
     
     var managedScrollView: UIScrollView {
         typedView.scrollView

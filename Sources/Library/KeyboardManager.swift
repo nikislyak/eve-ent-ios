@@ -102,8 +102,6 @@ open class ScrollViewInsetAdjustingKeyboardManager: KeyboardManager {
         )
     }
     
-    private lazy var initialInset = viewController.managedScrollView.contentInset
-    
     private func adjustContentInset(
         on view: UIView,
         willHide: Bool,
@@ -111,11 +109,16 @@ open class ScrollViewInsetAdjustingKeyboardManager: KeyboardManager {
     ) {
         let scrollView = viewController.managedScrollView
         
+        let oldInset = scrollView.contentInset
+        
         if willHide {
-            scrollView.contentInset = initialInset
+            scrollView.contentInset = .init(
+                top: oldInset.top,
+                left: oldInset.left,
+                bottom: oldInset.bottom - animationData.endFrame.height,
+                right: oldInset.right
+            )
         } else {
-            let oldInset = scrollView.contentInset
-            
             scrollView.contentInset = .init(
                 top: oldInset.top,
                 left: oldInset.left,
@@ -147,7 +150,7 @@ open class ScrollViewInsetAdjustingKeyboardManager: KeyboardManager {
                     animations: {
                         scrollView.contentOffset = .init(
                             x: 0,
-                            y: mostBottomView.frame.origin.y + 8
+                            y: scrollView.convert(mostBottomView.frame, from: mostBottomView).origin.y + 8
                         )
                     }
                 )
@@ -155,5 +158,27 @@ open class ScrollViewInsetAdjustingKeyboardManager: KeyboardManager {
         }
         
         scrollView.scrollIndicatorInsets = scrollView.contentInset
+    }
+}
+
+open class SafeAreaAdjustingKeyboardManager: KeyboardManager {
+    open override func onKeyboardFrameChange(willHide: Bool, animationData: KeyboardManager.AnimationData) {
+        let old = viewController.additionalSafeAreaInsets
+        
+        viewController.additionalSafeAreaInsets = .init(
+            top: old.top,
+            left: old.left,
+            bottom: willHide ? 0 : animationData.endFrame.height,
+            right: old.right
+        )
+        
+        UIView.animate(
+            withDuration: animationData.duration,
+            delay: 0,
+            options: animationData.options,
+            animations: {
+                self.viewController.view.layoutIfNeeded()
+            }
+        )
     }
 }

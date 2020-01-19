@@ -23,7 +23,7 @@ public extension AuthView {
             |> \.textContentType .~ .emailAddress
             |> \.keyboardAppearance .~ .dark
             |> \.autocapitalizationType .~ .none
-            |> \.attributedPlaceholder .~ preparePlaceholder(text: "Email")
+            |> \.attributedPlaceholder .~ preparePlaceholder(text: L10n.Authorization.EmailTextField.placeholder)
         
         
         public let passwordTextField = UITextField()
@@ -32,7 +32,7 @@ public extension AuthView {
             |> \.keyboardAppearance .~ .dark
             |> \.autocapitalizationType .~ .none
             |> \.isSecureTextEntry .~ true
-            |> \.attributedPlaceholder .~ preparePlaceholder(text: "Password")
+            |> \.attributedPlaceholder .~ preparePlaceholder(text: L10n.Authorization.PasswordTextField.placeholder)
         
         override init(frame: CGRect) {
             super.init(frame: frame)
@@ -80,8 +80,6 @@ public class AuthView: UIView {
         |> \.isLayoutMarginsRelativeArrangement .~ true
         |> \.layoutMargins .~ UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
     
-    let wrapperView = UIView()
-    
     public let blockView =
         VisualEffectContainer(view: TextFieldBlock(), effect: UIBlurEffect(style: .systemChromeMaterialDark))
             |> \.view.layer.cornerRadius .~ 5
@@ -91,7 +89,7 @@ public class AuthView: UIView {
         VisualEffectContainer(view: UIButton(), effect: UIBlurEffect(style: .systemChromeMaterialDark))
             |> \.view.layer.cornerRadius .~ 5
             |> \.view.layer.masksToBounds .~ true
-            |> sideEffect(^\.view >>> sideEffect(flip(UIButton.setTitle)("String", .normal)))
+            |> sideEffect(^\.view >>> sideEffect(flip(UIButton.setTitle)(L10n.Authorization.SignInButton.title, .normal)))
 
     
     private lazy var keyboardLayout = KeyboardLayoutGuide(view: self, usingSafeArea: true)
@@ -99,7 +97,7 @@ public class AuthView: UIView {
     private let layersView = UIView()
     private let gradient = Design.buildGradient()
     private let emitter = Design.buildGlareEmitter()
-
+    
     public override init(frame: CGRect) {
         super.init(frame: frame)
         
@@ -109,7 +107,6 @@ public class AuthView: UIView {
         
         scrollView.sv(
             stackView.arranged(
-                wrapperView,
                 blockView,
                 loginBtn
             )
@@ -129,12 +126,10 @@ public class AuthView: UIView {
     
     private func setupConstraints() {
         layersView.fillContainer()
-        scrollView.fillContainer()
+        scrollView.stretchToSafeArea(of: self)
         
         stackView.centerInContainer()
-        stackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor).isActive = true
-        
-        wrapperView.height(300)
+        stackView.Width == scrollView.Width
         
         loginBtn.Height == 40
         blockView.Height == 100

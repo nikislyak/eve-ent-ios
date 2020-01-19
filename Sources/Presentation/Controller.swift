@@ -70,5 +70,5 @@ class BaseController<View: UIView & StateDriven>: UIViewController, UserInterfac
         ScrollViewInsetAdjustingKeyboardManager.self
     }
     
-    let keyboardManager = BaseController.keyboardManagerClass.init()
+    private(set) lazy var keyboardManager = type(of: self).keyboardManagerClass.init()
 }
