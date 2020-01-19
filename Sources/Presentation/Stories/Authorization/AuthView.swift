@@ -7,12 +7,32 @@
 
 import UIKit
 import Stevia
+import Overture
+
+fileprivate func preparePlaceholder(text: String) -> NSAttributedString {
+    return NSAttributedString(
+        string: text,
+        attributes: [.foregroundColor : UIColor.lightGray]
+    )
+}
 
 public extension AuthView {
     class TextFieldBlock: UIView {
-        public let emailTextField = with(UITextField(), AuthViewDesign.emailTextField)
-            
-        public let passwordTextField = with(UITextField(), AuthViewDesign.passwordTextField)
+        public let emailTextField = UITextField()
+            |> \.textColor .~ .white
+            |> \.textContentType .~ .emailAddress
+            |> \.keyboardAppearance .~ .dark
+            |> \.autocapitalizationType .~ .none
+            |> \.attributedPlaceholder .~ preparePlaceholder(text: "Email")
+        
+        
+        public let passwordTextField = UITextField()
+            |> \.textColor .~ .white
+            |> \.textContentType .~ .password
+            |> \.keyboardAppearance .~ .dark
+            |> \.autocapitalizationType .~ .none
+            |> \.isSecureTextEntry .~ true
+            |> \.attributedPlaceholder .~ preparePlaceholder(text: "Password")
         
         override init(frame: CGRect) {
             super.init(frame: frame)
@@ -42,13 +62,24 @@ public extension AuthView {
 public class AuthView: UIView {
     typealias Design = AuthViewDesign
     
-    public let blockView: TextFieldBlock = with(TextFieldBlock(), Design.textFieldBlock)
+    var activeTextInput: UIView? {
+        [blockView.view.emailTextField, blockView.view.emailTextField].first(where: ^\.isFirstResponder)
+    }
     
-    public let loginBtn = with(UIButton(), Design.loginButton)
+    let scrollView = UIScrollView()
+    let stackView = UIStackView()
+    
+    public let blockView =
+        VisualEffectContainer(view: TextFieldBlock(), effect: UIBlurEffect(style: .systemChromeMaterialDark))
+            |> \.view.layer.cornerRadius .~ 5
+            |> \.view.layer.masksToBounds .~ true
+    
+    public let loginBtn =
+        VisualEffectContainer(view: UIButton(), effect: UIBlurEffect(style: .systemChromeMaterialDark))
+            |> \.view.layer.cornerRadius .~ 5
+            |> \.view.layer.masksToBounds .~ true
+            |> sideEffect(^\.view >>> sideEffect(flip(UIButton.setTitle)("String", .normal)))
 
-    public let titleLabel = with(UILabel(), Design.titleLabel)
-    
-    public let subtitleLabel = with(UILabel(), Design.subtitleLabel)
     
     private lazy var keyboardLayout = KeyboardLayoutGuide(view: self, usingSafeArea: true)
     
@@ -59,12 +90,14 @@ public class AuthView: UIView {
     public override init(frame: CGRect) {
         super.init(frame: frame)
         self.backgroundColor = .white
-        
+
         self.insertSubview(layersView, at: 0)
-        for view in [blockView, loginBtn, titleLabel, subtitleLabel] {
-            view.translatesAutoresizingMaskIntoConstraints = false
-            self.insertSubview(view, at: 1)
-        }
+        self.insertSubview(scrollView, at: 1)
+        scrollView.insertSubview(stackView, at: 0)
+        stackView.addArrangedSubview(blockView)
+        stackView.addArrangedSubview(loginBtn)
+        stackView.arra
+        
         addGestureRecognizer(
             UITapGestureRecognizer(target: self, action: #selector(UIView.endEditing))
         )
@@ -74,13 +107,12 @@ public class AuthView: UIView {
         DispatchQueue.main.async {
             self.addAnimatedGradient()
             self.addGlareEmitter()
-            self.titleLabel.upscaleAnimation(0.5, duration: 1.2, delay: 0.5)
-            self.subtitleLabel.upscaleAnimation(0.5, duration: 0.9, delay: 0.8)
         }
     }
     
     private func setupConstraints() {
         layersView.fillContainer()
+        scrollView.fillContainer()
         
         loginBtn.Height == 40
         loginBtn.Left == keyboardLayout.Left + 10
@@ -91,14 +123,6 @@ public class AuthView: UIView {
         blockView.Left == keyboardLayout.Left + 10
         blockView.Right == keyboardLayout.Right - 10
         blockView.Bottom == loginBtn.Top - 10
-        
-        titleLabel.Top == safeAreaLayoutGuide.Top + 40
-        titleLabel.Left == safeAreaLayoutGuide.Left + 30
-        titleLabel.rightAnchor.constraint(lessThanOrEqualTo: safeAreaLayoutGuide.rightAnchor).isActive = true
-        
-        subtitleLabel.Top == titleLabel.Bottom + 10
-        subtitleLabel.Left == safeAreaLayoutGuide.Left + 30
-        subtitleLabel.rightAnchor.constraint(lessThanOrEqualTo: safeAreaLayoutGuide.rightAnchor).isActive = true
     }
     
     private func addGlareEmitter() {
@@ -125,7 +149,7 @@ extension AuthView: StateDriven {
     }
     
     func render(_ state: AuthView.State) {
-        blockView.emailTextField.text = state.email
+        blockView.view.emailTextField.text = state.email
     }
 }
 

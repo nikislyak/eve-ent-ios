@@ -23,10 +23,7 @@ public enum AuthViewDesign {
     }
     
     public static func titleLabel(_ label: UILabel) {
-        label.numberOfLines = 0
-        label.textColor = UIColor.black.withAlphaComponent(0.95)
-        label.font = .systemFont(ofSize: 70, weight: .semibold)
-        label.text = "Title"
+
     }
     
     public static func subtitleLabel(_ label: UILabel) {
@@ -97,18 +94,10 @@ public enum AuthViewDesign {
     }
     
 
-    public static func textFieldBlock(_ view: VisualEffectContainer<AuthView.TextFieldBlock>) {
+    public static func textFieldBlock(_ view: AuthView.TextFieldBlock) {
         roundedRect(view)
     }
     
-    public static func emailTextField(_ tf: UITextField) {
-        configureTextField(
-            textField: tf,
-            text: "Email"
-        )
-        tf.autocapitalizationType = .none
-        tf.textContentType = .emailAddress
-    }
     
     public static func passwordTextField(_ tf: UITextField) {
         configureTextField(
@@ -120,10 +109,10 @@ public enum AuthViewDesign {
         tf.textContentType = .password
     }
     
-    public static func loginButton(_ btn: VisualEffectContainer<UIButton>) {
+    public static func loginButton(_ btn: UIButton) {
         roundedRect(btn)
-        btn.view.setTitle("Auth", for: .normal)
-        btn.view.setTitleColor(.lightGray, for: .normal)
-        btn.view.setTitleColor(.white, for: .highlighted)
+        btn.setTitle("Auth", for: .normal)
+        btn.setTitleColor(.lightGray, for: .normal)
+        btn.setTitleColor(.white, for: .highlighted)
     }
 }

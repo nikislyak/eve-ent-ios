@@ -9,11 +9,25 @@ import Foundation
 import UIKit
 import Combine
 
-class AuthController: BaseController<AuthView> {
+class AuthController: BaseController<AuthView>, KeyboardManagable {
+    
+    var managedScrollView = UIScrollView()
+    var mostBottomView: UIView? {
+        return typedView.activeTextInput
+    }
+    
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        typedView.loginBtn.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(signIn)))
+        typedView.loginBtn.view.addTarget(self, action: #selector(signIn), for: .touchUpInside)
+    }
+    
+    override func setup() {
+        super.setup()
+        
+        keyboardManager.viewController = self
     }
     
     @objc func signIn() {
@@ -21,8 +35,8 @@ class AuthController: BaseController<AuthView> {
             .tryFlatMapLatest { [weak typedView] (auth: AuthorizationUseCase) in
                 auth.perform(
                     credentials: Credentials(
-                        email: try Email(rawValue: typedView?.blockView.emailTextField.text ?? ""),
-                        password: try Password(rawValue: typedView?.blockView.passwordTextField.text ?? "")
+                        email: try Email(rawValue: typedView?.blockView.view.emailTextField.text ?? ""),
+                        password: try Password(rawValue: typedView?.blockView.view.passwordTextField.text ?? "")
                     )
                 )
             }
