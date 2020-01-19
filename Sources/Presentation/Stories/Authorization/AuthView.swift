@@ -67,6 +67,8 @@ public class AuthView: UIView {
     }
     
     let scrollView = UIScrollView()
+        |> \.alwaysBounceVertical .~ true
+        |> \.keyboardDismissMode .~ .interactive
     
     let stackView = UIStackView()
         |> \.spacing .~ 10
@@ -102,11 +104,9 @@ public class AuthView: UIView {
         sv(layersView, scrollView)
         
         scrollView.sv(
-            wrapperView.sv(
-                stackView.arranged(
-                    blockView,
-                    loginBtn
-                )
+            stackView.arranged(
+                blockView,
+                loginBtn
             )
         )
         
@@ -126,13 +126,8 @@ public class AuthView: UIView {
         layersView.fillContainer()
         scrollView.fillContainer()
         
-        wrapperView.fillContainer()
-        
-        wrapperView.Height == Height
-        wrapperView.Width == Width
-        
         stackView.centerInContainer()
-        stackView.Width == wrapperView.Width
+        stackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor).isActive = true
         
         loginBtn.Height == 40
         blockView.Height == 100

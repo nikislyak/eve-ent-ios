@@ -98,6 +98,8 @@ open class ScrollViewInsetAdjustingKeyboardManager: KeyboardManager {
         )
     }
     
+    private lazy var initialInset = viewController.managedScrollView.contentInset
+    
     private func adjustContentInset(
         on view: UIView,
         hide: Bool,
@@ -106,13 +108,13 @@ open class ScrollViewInsetAdjustingKeyboardManager: KeyboardManager {
         let scrollView = viewController.managedScrollView
         
         if hide {
-            scrollView.contentInset = .zero
+            scrollView.contentInset = initialInset
         } else {
             scrollView.contentInset = .init(
-                top: 0,
-                left: 0,
-                bottom: animationData.endFrame.height,
-                right: 0
+                top: initialInset.top,
+                left: initialInset.left,
+                bottom: initialInset.bottom + animationData.endFrame.height,
+                right: initialInset.right
             )
         }
     }

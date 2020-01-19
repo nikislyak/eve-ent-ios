@@ -11,12 +11,13 @@ import Combine
 
 class AuthController: BaseController<AuthView>, KeyboardManagable {
     
-    var managedScrollView = UIScrollView()
+    var managedScrollView: UIScrollView {
+        typedView.scrollView
+    }
+    
     var mostBottomView: UIView? {
         return typedView.activeTextInput
     }
-    
-    
     
     override func viewDidLoad() {
         super.viewDidLoad()
