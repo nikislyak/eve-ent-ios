@@ -67,10 +67,13 @@ public class AuthView: UIView {
     }
     
     let scrollView = UIScrollView()
+    
     let stackView = UIStackView()
         |> \.spacing .~ 10
+        |> \.axis .~ .vertical
         |> \.isLayoutMarginsRelativeArrangement .~ true
         |> \.layoutMargins .~ UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+    
     let wrapperView = UIView()
     
     public let blockView =
@@ -93,13 +96,19 @@ public class AuthView: UIView {
 
     public override init(frame: CGRect) {
         super.init(frame: frame)
-        self.backgroundColor = .white
-
-        sv(layersView)
-        self.insertSubview(scrollView, aboveSubview: layersView)
-        scrollView.sv(wrapperView.sv(stackView))
-        stackView.arranged(blockView, loginBtn)
         
+        backgroundColor = .white
+
+        sv(layersView, scrollView)
+        
+        scrollView.sv(
+            wrapperView.sv(
+                stackView.arranged(
+                    blockView,
+                    loginBtn
+                )
+            )
+        )
         
         addGestureRecognizer(
             UITapGestureRecognizer(target: self, action: #selector(UIView.endEditing))
@@ -117,12 +126,14 @@ public class AuthView: UIView {
         layersView.fillContainer()
         scrollView.fillContainer()
         
-        wrapperView.Top == scrollView.Top
-        wrapperView.Left == scrollView.Left
+        wrapperView.fillContainer()
+        
         wrapperView.Height == Height
         wrapperView.Width == Width
+        
         stackView.centerInContainer()
-        stackView.Width == Width
+        stackView.Width == wrapperView.Width
+        
         loginBtn.Height == 40
         blockView.Height == 100
     }
