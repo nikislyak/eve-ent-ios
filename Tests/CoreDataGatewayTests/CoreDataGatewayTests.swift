@@ -1,5 +1,5 @@
 //
-//  BasePersistenceGatewayTests.swift
+//  CoreDataGatewayTests.swift
 //  Eve-Ent
 //
 //  Created by Nikita Kislyakov on 14.01.2020.
@@ -133,6 +133,56 @@ class CoreDataGatewayTests: XCTestCase {
                 }
         }
     }
+    
+    func testEditMany() {
+        var editedUser0 = testUsers[0]
+        var editedUser1 = testUsers[1]
+        
+        editedUser0.firstName = "Nikita"
+        editedUser0.lastName = "Kislyakov"
+        
+        editedUser1.firstName = "Nikita1"
+        editedUser1.lastName = "Kisyakov1"
+        
+        waiting("Test edit many") { exp in
+            self.coreData.save([testUsers[0], testUsers[1], testUsers[2]], shouldEditExisting: true)
+                .flatMap {
+                    self.coreData.save([editedUser0, editedUser1], shouldEditExisting: true)
+                }
+                .flatMap {
+                    self.coreData.getAll()
+                }
+                .sink { (users: [User]) in
+                    if users.sorted(by: \.id) == [editedUser0, editedUser1, testUsers[2]] {
+                        exp.fulfill()
+                    } else {
+                        XCTFail()
+                    }
+                }
+        }
+    }
+    
+    func testSaveWithoutReplacement() {
+        let overwrittenDevices = testDevices.map { Device(id: $0.id, name: $0.name + "!") }
+        
+        waiting("Test overwrite with replacement") { exp in
+            save(testDevices)
+                .flatMap {
+                    self.save(overwrittenDevices, replace: false)
+                }
+                .flatMap {
+                    self.coreData.getAll()
+                }
+                .sink { (devices: [Device]) in
+                    if devices.sorted(by: \.id) != overwrittenDevices {
+                        exp.fulfill()
+                    } else {
+                        XCTFail()
+                    }
+                }
+        }
+    }
+
 
     func testFetch() {
         waiting("Test fetching") { exp in
@@ -190,48 +240,6 @@ class CoreDataGatewayTests: XCTestCase {
                 }
                 .sink { (devices: [Device]) in
                     if devices.sorted(by: \.id) == [testDevices[0], testDevices[3]] {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
-                }
-        }
-    }
-    
-    func testOverwriteWithReplacement() {
-        let overwrittenDevices = testDevices.map { Device(id: $0.id, name: $0.name + "!") }
-        
-        waiting("Test overwrite with replacement") { exp in
-            save(testDevices)
-                .flatMap {
-                    self.save(overwrittenDevices)
-                }
-                .flatMap {
-                    self.coreData.getAll()
-                }
-                .sink { (devices: [Device]) in
-                    if devices.sorted(by: \.id) == overwrittenDevices {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
-                }
-        }
-    }
-    
-    func testOverwriteWithoutReplacement() {
-        let overwrittenDevices = testDevices.map { Device(id: $0.id, name: $0.name + "!") }
-        
-        waiting("Test overwrite with replacement") { exp in
-            save(testDevices)
-                .flatMap {
-                    self.save(overwrittenDevices, replace: false)
-                }
-                .flatMap {
-                    self.coreData.getAll()
-                }
-                .sink { (devices: [Device]) in
-                    if devices.sorted(by: \.id) != overwrittenDevices {
                         exp.fulfill()
                     } else {
                         XCTFail()
