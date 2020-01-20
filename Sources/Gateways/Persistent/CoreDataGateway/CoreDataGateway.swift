@@ -83,7 +83,7 @@ class CoreDataGateway {
         .perform(with: id)
     }
     
-    func listenUpdates<T: NSManagedObjectConvertible>(byID id: T.ID) -> AnyPublisher<T, Error> {
+    func listenUpdates<T: NSManagedObjectConvertible>(byID id: T.ID) -> AnyPublisher<T?, Error> {
         ListenUpdatesByID(
             childContext: childContext,
             parentContext: parentContext

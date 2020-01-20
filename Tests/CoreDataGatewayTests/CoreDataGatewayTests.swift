@@ -184,8 +184,8 @@ class CoreDataGatewayTests: XCTestCase {
     }
 
 
-    func testFetch() {
-        waiting("Test fetching") { exp in
+    func testGetAll() {
+        waiting("Test get all") { exp in
             save(testUsers)
                 .flatMap {
                     self.coreData.getAll()
@@ -200,8 +200,8 @@ class CoreDataGatewayTests: XCTestCase {
         }
     }
     
-    func testFetchWithPredicate() {
-        waiting("Test fetch with predicate") { exp in
+    func testGetByID() {
+        waiting("Test get by id") { exp in
             save(testUsers)
                 .flatMap {
                     self.coreData.get(byID: testUsers[1].id)
@@ -216,8 +216,8 @@ class CoreDataGatewayTests: XCTestCase {
             }
     }
     
-    func testFetchDevices() {
-        waiting("Test fetch devices for user with id") { exp in
+    func testGetAllRelated() {
+        waiting("Test get all related") { exp in
             save(testDevices)
                 .flatMap {
                     self.coreData.getAll()
@@ -232,8 +232,8 @@ class CoreDataGatewayTests: XCTestCase {
         }
     }
     
-    func testFetchDevicesForUserWithId() {
-        waiting("Test fetch devices for user with id") { exp in
+    func testGetAllRelatedWithPredicate() {
+        waiting("Test get all related with predicate") { exp in
             save(testUsers)
                 .flatMap {
                     self.coreData.getAll(using: NSPredicate(format: "user.id == %d", testUsers[0].id))
@@ -248,20 +248,22 @@ class CoreDataGatewayTests: XCTestCase {
         }
     }
     
-    func testListen() {
+    func testListenUpdatesByID() {
         let expectedUsers: [User] = [
             User(id: testUsers[0].id, firstName: testUsers[0].firstName, lastName: testUsers[0].lastName, devices: testUsers[0].devices),
             User(id: testUsers[0].id, firstName: testUsers[0].firstName + "!", lastName: testUsers[0].lastName, devices: testUsers[0].devices),
             User(id: testUsers[0].id, firstName: testUsers[0].firstName, lastName: testUsers[0].lastName + "!", devices: testUsers[0].devices),
         ]
         
-        waiting("Test listen") { exp -> AnyCancellable in
+        waiting("Test listen updates by id") { exp -> AnyCancellable in
+            let lock = NSLock()
+            
             var recordedUsers: [User?] = []
             
             DispatchQueue.global().async {
                 let sem = DispatchSemaphore(value: 0)
                 
-                let c = self.coreData.save(expectedUsers[recordedUsers.count])
+                let cancellable = self.coreData.save(expectedUsers[recordedUsers.count])
                     .sink(
                         receiveCompletion: { _ in sem.signal() },
                         receiveValue: {}
@@ -272,8 +274,10 @@ class CoreDataGatewayTests: XCTestCase {
             
             return coreData
                 .listenUpdates(byID: testUsers[0].id)
-                .sink { (user: User) in
+                .sink { (user: User?) in
+                    lock.lock()
                     recordedUsers.append(user)
+                    lock.unlock()
                     
                     if recordedUsers == expectedUsers {
                         exp.fulfill()
@@ -283,7 +287,49 @@ class CoreDataGatewayTests: XCTestCase {
                         DispatchQueue.global().async {
                             let sem = DispatchSemaphore(value: 0)
                             
-                            let c = self.coreData.save(expectedUsers[recordedUsers.count])
+                            let cancellable = self.coreData.save(expectedUsers[recordedUsers.count])
+                                .sink(
+                                    receiveCompletion: { _ in sem.signal() },
+                                    receiveValue: {}
+                                )
+                            
+                            sem.wait()
+                        }
+                    }
+                }
+        }
+    }
+    
+    func testListenUpdatesByIDWhenNotExists() {
+        let expectedUsers: [User?] = [
+            nil,
+            User(id: testUsers[0].id, firstName: testUsers[0].firstName, lastName: testUsers[0].lastName, devices: testUsers[0].devices),
+            User(id: testUsers[0].id, firstName: testUsers[0].firstName + "!", lastName: testUsers[0].lastName, devices: testUsers[0].devices),
+            User(id: testUsers[0].id, firstName: testUsers[0].firstName, lastName: testUsers[0].lastName + "!", devices: testUsers[0].devices),
+        ]
+        
+        waiting("Test listen updates by id when not exists") { exp -> AnyCancellable in
+            let lock = NSLock()
+            
+            var recordedUsers: [User?] = []
+            
+            return coreData
+                .listenUpdates(byID: testUsers[0].id)
+                .sink { (user: User?) in
+                    lock.lock()
+                    recordedUsers.append(user)
+                    lock.unlock()
+                    
+                    if recordedUsers == expectedUsers {
+                        exp.fulfill()
+                    } else if recordedUsers.count == 4 {
+                        XCTFail()
+                    } else {
+                        DispatchQueue.global().async {
+                            let sem = DispatchSemaphore(value: 0)
+                            
+                            let cancellable = self.coreData
+                                .save(expectedUsers[recordedUsers.count]!)
                                 .sink(
                                     receiveCompletion: { _ in sem.signal() },
                                     receiveValue: {}

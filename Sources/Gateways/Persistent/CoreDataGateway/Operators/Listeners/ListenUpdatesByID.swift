@@ -13,17 +13,32 @@ struct ListenUpdatesByID<T: NSManagedObjectConvertible> {
     let childContext: NSManagedObjectContext
     let parentContext: NSManagedObjectContext
     
-    func perform(with id: T.ID) -> AnyPublisher<T, Error> {
+    func perform(with id: T.ID) -> AnyPublisher<T?, Error> {
         NotificationCenter
             .default
             .publisher(for: .NSManagedObjectContextDidSave, object: parentContext)
-            .map { notification in
-                let updatedObjects = notification.userInfo?[NSUpdatedObjectsKey] as? Set<T.ManagedEntity>
+            .map { notification -> AnyPublisher<T?, Never> in
+                let insertedObjects = (notification.userInfo?[NSInsertedObjectsKey] as? NSSet)?.compactMap { $0 as? T.ManagedEntity }
+                let updatedObjects = (notification.userInfo?[NSUpdatedObjectsKey] as? NSSet)?.compactMap { $0 as? T.ManagedEntity }
+                let deletedObjects = (notification.userInfo?[NSDeletedObjectsKey] as? NSSet)?.compactMap { $0 as? T.ManagedEntity }
                 
-                return updatedObjects?
-                    .first { $0.id == id }
-                    .map { $0.plain }
+                if let insertedObjects = insertedObjects,
+                    let insertedObject = insertedObjects.first(where: { $0.id == id })?.plain {
+                    return Just(insertedObject).eraseToAnyPublisher()
+                }
+                
+                if let deletedObjects = deletedObjects,
+                    deletedObjects.contains(where: { $0.id == id }) {
+                    return Just(nil).eraseToAnyPublisher()
+                }
+                
+                if let updatedObject = updatedObjects?.first(where: { $0.id == id })?.plain {
+                    return Just(updatedObject).eraseToAnyPublisher()
+                }
+                
+                return Empty().eraseToAnyPublisher()
             }
+            .switchToLatest()
             .setFailureType(to: Error.self)
             .prepend(
                 GetByID(
@@ -32,7 +47,6 @@ struct ListenUpdatesByID<T: NSManagedObjectConvertible> {
                 )
                 .perform(with: id)
             )
-            .compactMap { $0 }
             .eraseToAnyPublisher()
     }
 }
