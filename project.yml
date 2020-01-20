@@ -9,36 +9,15 @@ options:
   createIntermediateGroups: true
   generateEmptyDirectories: true
 
-packages:
-  Overture:
-    url: https://github.com/pointfreeco/swift-overture
-    from: 0.5.0
-  KeychainAccess:
-    url: https://github.com/kishikawakatsumi/KeychainAccess
-    from: 4.1.0
-  SDWebImage:
-    url: https://github.com/SDWebImage/SDWebImage
-    from: 5.1.0
-  Stevia:
-    url: https://github.com/freshOS/Stevia
-    from: 4.8.0
-  RouteComposer:
-    url: https://github.com/ekazaev/route-composer
-    branch: master
-
 targets:
   Eve-Ent:
     type: application
     platform: iOS
     sources:
-      - path: Sources
-        excludes:
-          - Data
-          - Domain
-          - Library
-      - path: Sources/Generated/L10n.swift
+      - path: Sources/Eve-Ent
+      - path: Sources/Eve-Ent/Generated/L10n.swift
         optional: true
-      - path: Sources/Generated/Assets.swift
+      - path: Sources/Eve-Ent/Generated/Assets.swift
         optional: true
     settings:
       base:
@@ -46,7 +25,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: LYJJP2ZH5L
         TARGETED_DEVICE_FAMILY: 1
-        TARGET_PATH: Sources
+        TARGET_PATH: Sources/Eve-Ent
     prebuildScripts:
       - script: |
           mint run swiftgen swiftgen strings ${SCRIPT_INPUT_FILE_0} -t structured-swift4 --output ${SCRIPT_OUTPUT_FILE_0}
@@ -66,11 +45,11 @@ targets:
       - target: Domain
       - target: Data
       - target: Library
-      - package: Overture
-      - package: KeychainAccess
-      - package: SDWebImage
-      - package: Stevia
-      - package: RouteComposer
+      - carthage: Overture
+      - carthage: KeychainAccess
+      - carthage: SDWebImage
+      - carthage: Stevia
+      - carthage: RouteComposer
       - sdk: CoreData.framework
     scheme:
       testTargets:
@@ -87,7 +66,7 @@ targets:
       - target: Domain
       - target: Library
       - target: Data
-      - package: Overture
+      - carthage: Overture
       - sdk: CoreData.framework
   
   Domain:
@@ -96,7 +75,7 @@ targets:
     sources:
       - path: Sources/Domain
     dependencies:
-      - package: Overture
+      - carthage: Overture
       - target: Library
 
   Data:
@@ -107,9 +86,9 @@ targets:
     dependencies:
       - target: Domain
       - target: Library
-      - package: Overture
-      - package: KeychainAccess
-      - package: RouteComposer
+      - carthage: Overture
+      - carthage: KeychainAccess
+      - carthage: RouteComposer
       - sdk: CoreData.framework
     
   Library:
@@ -119,5 +98,5 @@ targets:
       - path: Sources/Library
     dependencies:
       - sdk: CoreData.framework
-      - package: KeychainAccess
-      - package: Stevia
+      - carthage: KeychainAccess
+      - carthage: Stevia

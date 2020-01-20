@@ -47,9 +47,6 @@ open class KeyboardManager {
                         NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)
                 )
                 .removeDuplicates { $0.0.willHide == $1.0.willHide }
-                .handleEvents(receiveOutput: { notification, _ in
-                    print("Will Show: ", !notification.willHide)
-                })
                 .sink { [weak self] showHide, changeFrame in
                     self?.handle(showHide: showHide, changeFrame: changeFrame)
                 }
