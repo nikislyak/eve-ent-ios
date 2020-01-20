@@ -18,10 +18,9 @@ struct ListenUpdatesByID<T: NSManagedObjectConvertible> {
             .default
             .publisher(for: .NSManagedObjectContextDidSave, object: parentContext)
             .map { notification in
-                let updatedObjects = notification.userInfo?[NSUpdatedObjectsKey] as? NSSet
+                let updatedObjects = notification.userInfo?[NSUpdatedObjectsKey] as? Set<T.ManagedEntity>
                 
                 return updatedObjects?
-                    .compactMap { $0 as? T.ManagedEntity }
                     .first { $0.id == id }
                     .map { $0.plain }
             }
