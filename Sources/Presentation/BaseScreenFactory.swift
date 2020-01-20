@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import Domain
 
 protocol UserInterfaceModule: UIViewController {
     init(useCasesFactory: UseCasesFactory, router: RouterAbstraction)

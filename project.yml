@@ -10,9 +10,6 @@ options:
   generateEmptyDirectories: true
 
 packages:
-  Tagged:
-    url: https://github.com/pointfreeco/swift-tagged
-    from: 0.4.0
   Overture:
     url: https://github.com/pointfreeco/swift-overture
     from: 0.5.0
@@ -35,6 +32,10 @@ targets:
     platform: iOS
     sources:
       - path: Sources
+        excludes:
+          - Data
+          - Domain
+          - Library
       - path: Sources/Generated/L10n.swift
         optional: true
       - path: Sources/Generated/Assets.swift
@@ -62,7 +63,9 @@ targets:
         outputFiles:
           - ${TARGET_PATH}/Generated/Assets.swift
     dependencies:
-      - package: Tagged
+      - target: Domain
+      - target: Data
+      - target: Library
       - package: Overture
       - package: KeychainAccess
       - package: SDWebImage
@@ -81,5 +84,40 @@ targets:
       - path: Tests
     dependencies:
       - target: Eve-Ent
+      - target: Domain
+      - target: Library
+      - target: Data
       - package: Overture
       - sdk: CoreData.framework
+  
+  Domain:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/Domain
+    dependencies:
+      - package: Overture
+      - target: Library
+
+  Data:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/Data
+    dependencies:
+      - target: Domain
+      - target: Library
+      - package: Overture
+      - package: KeychainAccess
+      - package: RouteComposer
+      - sdk: CoreData.framework
+    
+  Library:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/Library
+    dependencies:
+      - sdk: CoreData.framework
+      - package: KeychainAccess
+      - package: Stevia

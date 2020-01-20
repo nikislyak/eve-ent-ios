@@ -9,6 +9,8 @@ import XCTest
 import CoreData
 import Combine
 import Overture
+import Library
+import Data
 @testable import Eve_Ent
 
 let testDevices: [Device] = [

@@ -8,6 +8,7 @@
 import Foundation
 import CoreData
 import Overture
+import Library
 @testable import Eve_Ent
 
 public struct User: NSManagedObjectConvertible, Hashable {

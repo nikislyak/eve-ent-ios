@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreData
+import Library
 @testable import Eve_Ent
 
 public struct Device: NSManagedObjectConvertible, Hashable {

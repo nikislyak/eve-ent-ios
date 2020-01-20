@@ -8,6 +8,8 @@
 import Foundation
 import UIKit
 import Combine
+import Library
+import Domain
 
 class AuthController: BaseController<AuthView>, KeyboardManagable {
     override class var keyboardManagerClass: KeyboardManager.Type {

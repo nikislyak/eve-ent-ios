@@ -8,6 +8,8 @@
 
 import UIKit
 import Combine
+import Data
+import Domain
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?

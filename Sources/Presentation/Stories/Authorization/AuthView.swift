@@ -8,6 +8,7 @@
 import UIKit
 import Stevia
 import Overture
+import Library
 
 fileprivate func preparePlaceholder(text: String) -> NSAttributedString {
     return NSAttributedString(
