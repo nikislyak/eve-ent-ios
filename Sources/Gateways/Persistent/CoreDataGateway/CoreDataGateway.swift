@@ -90,6 +90,14 @@ class CoreDataGateway {
         )
         .perform(with: id)
     }
+    
+    func listenAll<T: NSManagedObjectConvertible>() -> AnyPublisher<[T], Error> {
+        ListenAll(
+            childContext: childContext,
+            parentContext: parentContext
+        )
+        .perform()
+    }
 
     func save<T: NSManagedObjectConvertible>(_ plain: T, shouldEditExisting: Bool = true) -> AnyPublisher<Void, Error> {
         Save(

@@ -342,6 +342,47 @@ class CoreDataGatewayTests: XCTestCase {
         }
     }
     
+    func testListenAll() {
+        var expectedUserArrays: [[User]] = []
+        
+        for i in 0 ..< testUsers.count {
+            expectedUserArrays.append(Array(testUsers[..<i]))
+        }
+        
+        waiting("Test listen all") { exp -> AnyCancellable in
+            let lock = NSLock()
+            
+            var recordedUserArrays: [[User]] = []
+            
+            return coreData
+                .listenAll()
+                .sink { (users: [User]) in
+                    lock.lock()
+                    recordedUserArrays.append(users)
+                    lock.unlock()
+                    
+                    if recordedUserArrays == expectedUserArrays {
+                        exp.fulfill()
+                    } else if recordedUserArrays.count > expectedUserArrays.count {
+                        XCTFail()
+                    } else {
+                        DispatchQueue.global().async {
+                            let sem = DispatchSemaphore(value: 0)
+                            
+                            let cancellable = self.coreData
+                                .save(expectedUserArrays[recordedUserArrays.count])
+                                .sink(
+                                    receiveCompletion: { _ in sem.signal() },
+                                    receiveValue: {}
+                                )
+                            
+                            sem.wait()
+                        }
+                    }
+            }
+        }
+    }
+    
     func testDeleteAll() {
         waiting("Test delete all") { exp in
             save(testUsers)
