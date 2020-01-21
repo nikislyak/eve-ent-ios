@@ -35,16 +35,18 @@ final class TestCoreDataFactory: CoreDataFactory {
     
     private lazy var moc = NSManagedObjectContext(concurrencyType: .privateQueueConcurrencyType)
     
-    private lazy var pc = with(NSPersistentContainer(name: "eve-ent-test-container", managedObjectModel: mom)) {
-        $0.persistentStoreDescriptions = [
-            NSPersistentStoreDescription()
-                |> \.type .~ NSInMemoryStoreType
-                |> \.shouldAddStoreAsynchronously .~ false
-        ]
-        
-        $0.loadPersistentStores { desc, error in
-            if let error = error {
-                fatalError(error.localizedDescription)
+    private var pc: NSPersistentContainer {
+        with(NSPersistentContainer(name: "eve-ent-test-container", managedObjectModel: mom)) {
+            $0.persistentStoreDescriptions = [
+                NSPersistentStoreDescription()
+                    |> \.type .~ NSInMemoryStoreType
+                    |> \.shouldAddStoreAsynchronously .~ false
+            ]
+            
+            $0.loadPersistentStores { desc, error in
+                if let error = error {
+                    fatalError(error.localizedDescription)
+                }
             }
         }
     }
