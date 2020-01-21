@@ -360,7 +360,7 @@ class CoreDataGatewayTests: XCTestCase {
                 .listenAll()
                 .sink { (users: [User]) in
                     lock.lock()
-                    recordedUserArrays.append(users)
+                    recordedUserArrays.append(users.sorted(by: \.id))
                     lock.unlock()
                     
                     if recordedUserArrays == expectedUserArrays {
