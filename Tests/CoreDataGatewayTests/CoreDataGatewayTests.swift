@@ -263,21 +263,12 @@ class CoreDataGatewayTests: XCTestCase {
             let lock = NSLock()
             
             var recordedUsers: [User?] = []
-            
-            DispatchQueue.global().async {
-                let sem = DispatchSemaphore(value: 0)
-                
-                let cancellable = self.coreData.save(expectedUsers[recordedUsers.count])
-                    .sink(
-                        receiveCompletion: { _ in sem.signal() },
-                        receiveValue: {}
-                    )
-                
-                sem.wait()
-            }
-            
+
             return coreData
-                .listenUpdates(byID: testUsers[0].id)
+                .save(expectedUsers[recordedUsers.count])
+                .flatMapLatest {
+                    self.coreData.listenUpdates(byID: testUsers[0].id)
+                }
                 .sink { (user: User?) in
                     lock.lock()
                     recordedUsers.append(user)
@@ -285,7 +276,7 @@ class CoreDataGatewayTests: XCTestCase {
                     
                     if recordedUsers == expectedUsers {
                         exp.fulfill()
-                    } else if recordedUsers.count == 3 {
+                    } else if recordedUsers.count > expectedUsers.count {
                         XCTFail()
                     } else {
                         DispatchQueue.global().async {
