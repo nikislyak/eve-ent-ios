@@ -266,7 +266,7 @@ class CoreDataGatewayTests: XCTestCase {
 
             return coreData
                 .save(expectedUsers[recordedUsers.count])
-                .flatMapLatest {
+                .flatMap {
                     self.coreData.listenUpdates(byID: testUsers[0].id)
                 }
                 .sink { (user: User?) in
