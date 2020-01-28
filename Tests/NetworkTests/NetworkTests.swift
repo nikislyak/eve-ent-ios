@@ -56,6 +56,21 @@ class NetworkTests: XCTestCase {
         }
     }
     
+    func testRequestThenPerform() throws {
+        waiting { exp in
+            network
+                .request(path: "")
+                .body(data: Data())
+                .build()
+                .perform(on: network)
+                .sink(exp: exp) { (value: Int) in
+                    XCTAssertEqual(value, 1)
+                    
+                    exp.fulfill()
+                }
+        }
+    }
+    
     func testRequestMethod() throws {
         let url = URL(string: "https://github.com/")!
         
@@ -84,6 +99,17 @@ class NetworkTests: XCTestCase {
         expectedRequest.httpBody = try JSONEncoder().encode(1)
         
         builder = builder.body(data: try JSONEncoder().encode(1))
+        
+        XCTAssertEqual(expectedRequest, builder.build())
+        
+        let headers = [
+            "a": "a",
+            "b": "b"
+        ]
+        
+        headers.forEach { expectedRequest.addValue($0.value, forHTTPHeaderField: $0.key) }
+        
+        builder = builder.headers(headers)
         
         XCTAssertEqual(expectedRequest, builder.build())
     }
