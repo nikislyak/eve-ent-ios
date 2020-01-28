@@ -88,12 +88,10 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.getAll()
                 }
-                .sink { (users: [User]) in
-                    if users == [testUsers[0]] {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
+                .sink(exp: exp) { (users: [User]) in
+                    XCTAssertEqual(users, [testUsers[0]])
+                    
+                    exp.fulfill()
                 }
         }
     }
@@ -104,12 +102,10 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.getAll()
                 }
-                .sink { (users: [User]) in
-                    if users == [testUsers[0]] {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
+                .sink(exp: exp) { (users: [User]) in
+                    XCTAssertEqual(users, [testUsers[0]])
+                    
+                    exp.fulfill()
                 }
         }
     }
@@ -128,12 +124,10 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.get(byID: editedUser.id)
                 }
-                .sink { (user: User?) in
-                    if user == editedUser {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
+                .sink(exp: exp) { (user: User?) in
+                    XCTAssertEqual(user, editedUser)
+                    
+                    exp.fulfill()
                 }
         }
     }
@@ -156,12 +150,10 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.getAll()
                 }
-                .sink { (users: [User]) in
-                    if users.sorted(by: \.id) == [editedUser0, editedUser1, testUsers[2]] {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
+                .sink(exp: exp) { (users: [User]) in
+                    XCTAssertEqual(users.sorted(by: \.id), [editedUser0, editedUser1, testUsers[2]])
+                    
+                    exp.fulfill()
                 }
         }
     }
@@ -177,12 +169,10 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.getAll()
                 }
-                .sink { (devices: [Device]) in
-                    if devices.sorted(by: \.id) != overwrittenDevices {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
+                .sink(exp: exp) { (devices: [Device]) in
+                    XCTAssertNotEqual(devices.sorted(by: \.id), overwrittenDevices)
+                    
+                    exp.fulfill()
                 }
         }
     }
@@ -194,12 +184,10 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.getAll()
                 }
-                .sink { (array: [User]) in
-                    if array.sorted(by: \.id) == testUsers.sorted(by: \.id) {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
+                .sink(exp: exp) { (users: [User]) in
+                    XCTAssertEqual(users.sorted(by: \.id), testUsers.sorted(by: \.id))
+                    
+                    exp.fulfill()
                 }
         }
     }
@@ -210,12 +198,10 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.get(byID: testUsers[1].id)
                 }
-                .sink { (user: User?) in
-                    if let user = user, testUsers[1].id == user.id {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
+                .sink(exp: exp) { (user: User?) in
+                    XCTAssert(user != nil && user!.id == testUsers[1].id)
+                    
+                    exp.fulfill()
                 }
             }
     }
@@ -226,12 +212,10 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.getAll()
                 }
-                .sink { (devices: [Device]) in
-                    if devices.sorted(by: \.id) == testDevices {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
+                .sink(exp: exp) { (devices: [Device]) in
+                    XCTAssertEqual(devices.sorted(by: \.id), testDevices)
+                    
+                    exp.fulfill()
                 }
         }
     }
@@ -242,12 +226,10 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.getAll(using: NSPredicate(format: "user.id == %d", testUsers[0].id))
                 }
-                .sink { (devices: [Device]) in
-                    if devices.sorted(by: \.id) == [testDevices[0], testDevices[3]] {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
+                .sink(exp: exp) { (devices: [Device]) in
+                    XCTAssertEqual(devices.sorted(by: \.id), [testDevices[0], testDevices[3]])
+                    
+                    exp.fulfill()
                 }
         }
     }
@@ -269,15 +251,19 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.listenUpdates(byID: testUsers[0].id)
                 }
-                .sink { (user: User?) in
+                .sink(exp: exp) { (user: User?) in
                     lock.lock()
                     recordedUsers.append(user)
                     lock.unlock()
                     
-                    if recordedUsers == expectedUsers {
+                    if recordedUsers.count == expectedUsers.count {
+                        XCTAssertEqual(recordedUsers, expectedUsers)
+                        
                         exp.fulfill()
                     } else if recordedUsers.count > expectedUsers.count {
                         XCTFail()
+                        
+                        exp.fulfill()
                     } else {
                         DispatchQueue.global().async {
                             let sem = DispatchSemaphore(value: 0)
@@ -310,15 +296,19 @@ class CoreDataGatewayTests: XCTestCase {
             
             return coreData
                 .listenUpdates(byID: testUsers[0].id)
-                .sink { (user: User?) in
+                .sink(exp: exp) { (user: User?) in
                     lock.lock()
                     recordedUsers.append(user)
                     lock.unlock()
                     
-                    if recordedUsers == expectedUsers {
+                    if recordedUsers.count == expectedUsers.count {
+                        XCTAssertEqual(recordedUsers, expectedUsers)
+                        
                         exp.fulfill()
-                    } else if recordedUsers.count == 4 {
+                    } else if recordedUsers.count > expectedUsers.count {
                         XCTFail()
+                        
+                        exp.fulfill()
                     } else {
                         DispatchQueue.global().async {
                             let sem = DispatchSemaphore(value: 0)
@@ -351,15 +341,19 @@ class CoreDataGatewayTests: XCTestCase {
             
             return coreData
                 .listenAll()
-                .sink { (users: [User]) in
+                .sink(exp: exp) { (users: [User]) in
                     lock.lock()
                     recordedUserArrays.append(users.sorted(by: \.id))
                     lock.unlock()
                     
-                    if recordedUserArrays == expectedUserArrays {
+                    if recordedUserArrays.count == expectedUserArrays.count {
+                        XCTAssertEqual(recordedUserArrays, expectedUserArrays)
+                        
                         exp.fulfill()
                     } else if recordedUserArrays.count > expectedUserArrays.count {
                         XCTFail()
+                        
+                        exp.fulfill()
                     } else {
                         DispatchQueue.global().async {
                             let sem = DispatchSemaphore(value: 0)
@@ -387,12 +381,10 @@ class CoreDataGatewayTests: XCTestCase {
                 .flatMap {
                     self.coreData.getAll()
                 }
-                .sink { (users: [User]) in
-                    if users.isEmpty {
-                        exp.fulfill()
-                    } else {
-                        XCTFail()
-                    }
+                .sink(exp: exp) { (users: [User]) in
+                    XCTAssert(users.isEmpty)
+                    
+                    exp.fulfill()
                 }
         }
     }
