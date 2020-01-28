@@ -10,12 +10,14 @@ import Combine
 import XCTest
 
 extension Publisher {
-    func sink(_ fulfill: @escaping (Output) -> Void) -> AnyCancellable {
+    func sink(exp: XCTestExpectation, _ fulfill: @escaping (Output) -> Void) -> AnyCancellable {
         sink(
             receiveCompletion: { completion in
                 switch completion {
                 case let .failure(error):
                     XCTFail(error.localizedDescription)
+                    
+                    exp.fulfill()
                 default:
                     break
                 }
@@ -26,15 +28,17 @@ extension Publisher {
         )
     }
     
-    func sinkCompletion(_ fulfill: @escaping () -> Void) -> AnyCancellable {
+    func sinkCompletion(exp: XCTestExpectation) -> AnyCancellable {
         sink(
             receiveCompletion: { completion in
                 switch completion {
                 case let .failure(error):
                     XCTFail(error.localizedDescription)
-                case .finished:
-                    fulfill()
+                default:
+                    break
                 }
+                
+                exp.fulfill()
             },
             receiveValue: { _ in }
         )
