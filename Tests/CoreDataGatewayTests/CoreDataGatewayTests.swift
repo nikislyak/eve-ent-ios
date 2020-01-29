@@ -242,19 +242,19 @@ class CoreDataGatewayTests: XCTestCase {
         ]
         
         waiting("Test listen updates by id") { exp -> AnyCancellable in
-            let lock = NSLock()
+            let lock = NSRecursiveLock()
             
             var recordedUsers: [User?] = []
 
             return coreData
-                .save(expectedUsers[recordedUsers.count])
+                .save(expectedUsers[0])
                 .flatMap {
-                    self.coreData.listenUpdates(byID: testUsers[0].id)
+                    self.coreData.listenUpdates(byID: expectedUsers[0].id)
                 }
                 .sink(exp: exp) { (user: User?) in
-                    lock.lock()
+                    lock.lock(); defer { lock.unlock() }
+                    
                     recordedUsers.append(user)
-                    lock.unlock()
                     
                     if recordedUsers.count == expectedUsers.count {
                         XCTAssertEqual(recordedUsers, expectedUsers)
@@ -290,16 +290,16 @@ class CoreDataGatewayTests: XCTestCase {
         ]
         
         waiting("Test listen updates by id when not exists") { exp -> AnyCancellable in
-            let lock = NSLock()
+            let lock = NSRecursiveLock()
             
             var recordedUsers: [User?] = []
             
             return coreData
                 .listenUpdates(byID: testUsers[0].id)
                 .sink(exp: exp) { (user: User?) in
-                    lock.lock()
+                    lock.lock(); defer { lock.unlock() }
+                    
                     recordedUsers.append(user)
-                    lock.unlock()
                     
                     if recordedUsers.count == expectedUsers.count {
                         XCTAssertEqual(recordedUsers, expectedUsers)
@@ -335,16 +335,16 @@ class CoreDataGatewayTests: XCTestCase {
         }
         
         waiting("Test listen all") { exp -> AnyCancellable in
-            let lock = NSLock()
+            let lock = NSRecursiveLock()
             
             var recordedUserArrays: [[User]] = []
             
             return coreData
                 .listenAll()
                 .sink(exp: exp) { (users: [User]) in
-                    lock.lock()
+                    lock.lock(); defer { lock.unlock() }
+                    
                     recordedUserArrays.append(users.sorted(by: \.id))
-                    lock.unlock()
                     
                     if recordedUserArrays.count == expectedUserArrays.count {
                         XCTAssertEqual(recordedUserArrays, expectedUserArrays)
