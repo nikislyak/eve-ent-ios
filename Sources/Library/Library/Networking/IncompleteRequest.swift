@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 
-public struct IncompleteRequest {
+public struct IncompleteRequest<R: Decodable> {
     let network: Network
     let builder: RequestBuilder
     
@@ -36,7 +36,7 @@ public struct IncompleteRequest {
         .init(network: network, builder: builder.body(data: data))
     }
     
-    public func perform<R: Decodable>() -> AnyPublisher<R, Error> {
+    public func perform() -> AnyPublisher<R, Error> {
         network.perform(request: builder.build())
     }
 }
