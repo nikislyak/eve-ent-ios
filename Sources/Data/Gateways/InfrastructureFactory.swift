@@ -11,6 +11,7 @@ import CoreData
 import KeychainAccess
 import RouteComposer
 import Library
+import CoreDataKit
 
 public final class InfrastructureFactory {
     private let coreDataFactory: CoreDataFactory
