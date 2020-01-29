@@ -19,6 +19,8 @@ class MockURLSession: URLSessionProtocol {
 }
 
 class NetworkTests: XCTestCase {
+    let url = URL(string: "https://github.com/")!
+    
     var mockSession: MockURLSession!
     var network: Network!
 
@@ -30,7 +32,7 @@ class NetworkTests: XCTestCase {
         network = .init(
             env: .init(
                 urlSession: mockSession,
-                baseUrl: URL(string: "https://github.com/")!,
+                baseUrl: url,
                 decoder: .init(),
                 encoder: .init()
             )
@@ -47,7 +49,7 @@ class NetworkTests: XCTestCase {
     func testPerform() {
         waiting { exp in
             network
-                .perform(request: URLRequest(url: URL(string: "https://github.com/")!))
+                .perform(request: URLRequest(url: url))
                 .sink(exp: exp) { (data: Int) in
                     XCTAssertEqual(data, 1)
                     
@@ -61,8 +63,7 @@ class NetworkTests: XCTestCase {
             network
                 .request(path: "")
                 .body(data: Data())
-                .build()
-                .perform(on: network)
+                .perform()
                 .sink(exp: exp) { (value: Int) in
                     XCTAssertEqual(value, 1)
                     
@@ -72,8 +73,6 @@ class NetworkTests: XCTestCase {
     }
     
     func testRequestMethod() throws {
-        let url = URL(string: "https://github.com/")!
-        
         var expectedRequest = URLRequest(url: url)
         
         expectedRequest.httpMethod = "GET"
@@ -82,25 +81,25 @@ class NetworkTests: XCTestCase {
         
         builder = builder.method(.GET)
         
-        XCTAssertEqual(expectedRequest, builder.build())
+        XCTAssertEqual(expectedRequest, builder.builder.build())
         
         expectedRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
         
         builder = builder.header(key: "Content-Type", value: "application/json")
         
-        XCTAssertEqual(expectedRequest, builder.build())
+        XCTAssertEqual(expectedRequest, builder.builder.build())
         
         expectedRequest.allowsCellularAccess = true
         
         builder = builder.set(\.allowsCellularAccess, true)
         
-        XCTAssertEqual(expectedRequest, builder.build())
+        XCTAssertEqual(expectedRequest, builder.builder.build())
         
         expectedRequest.httpBody = try JSONEncoder().encode(1)
         
         builder = builder.body(data: try JSONEncoder().encode(1))
         
-        XCTAssertEqual(expectedRequest, builder.build())
+        XCTAssertEqual(expectedRequest, builder.builder.build())
         
         let headers = [
             "a": "a",
@@ -111,6 +110,6 @@ class NetworkTests: XCTestCase {
         
         builder = builder.headers(headers)
         
-        XCTAssertEqual(expectedRequest, builder.build())
+        XCTAssertEqual(expectedRequest, builder.builder.build())
     }
 }
