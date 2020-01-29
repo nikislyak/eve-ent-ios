@@ -265,10 +265,11 @@ class CoreDataGatewayTests: XCTestCase {
                         
                         exp.fulfill()
                     } else {
-                        DispatchQueue.global().async {
+                        Thread.detachNewThread {
                             let sem = DispatchSemaphore(value: 0)
                             
-                            let cancellable = self.coreData.save(expectedUsers[recordedUsers.count])
+                            let cancellable = self.coreData
+                                .save(expectedUsers[recordedUsers.count])
                                 .sink(
                                     receiveCompletion: { _ in sem.signal() },
                                     receiveValue: {}
@@ -310,7 +311,7 @@ class CoreDataGatewayTests: XCTestCase {
                         
                         exp.fulfill()
                     } else {
-                        DispatchQueue.global().async {
+                        Thread.detachNewThread {
                             let sem = DispatchSemaphore(value: 0)
                             
                             let cancellable = self.coreData
@@ -355,7 +356,7 @@ class CoreDataGatewayTests: XCTestCase {
                         
                         exp.fulfill()
                     } else {
-                        DispatchQueue.global().async {
+                        Thread.detachNewThread {
                             let sem = DispatchSemaphore(value: 0)
                             
                             let cancellable = self.coreData
