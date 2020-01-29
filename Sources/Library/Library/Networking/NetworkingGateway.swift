@@ -23,15 +23,71 @@ open class Network {
     }
     
     public func request(path: String) -> IncompleteRequest {
-        .init(network: self, builder: .init(baseUrl: env.baseUrl, path: path))
+        .init(network: self, builder: modify(request: .init(baseUrl: env.baseUrl, path: path)))
+    }
+    
+    open func modify(request: RequestBuilder) -> RequestBuilder {
+        request
     }
     
     open func perform<R: Decodable>(request: URLRequest) -> AnyPublisher<R, Error> {
         env.urlSession
             .dataTaskPublisher(for: request)
+            .mapError(NetworkError.other)
+            .flatMap { [env] dataTaskResult -> AnyPublisher<DataTaskResult, NetworkError> in
+                guard env.responseValidator?.isValid(response: dataTaskResult.response) ?? true else {
+                    return Fail(error: .validation).eraseToAnyPublisher()
+                }
+                
+                return Result.Publisher(dataTaskResult).eraseToAnyPublisher()
+            }
+            .catch { [env] error in
+                error.validation
+                    ? env.urlSession.dataTaskPublisher(for: request)
+                    : Fail(error: error).eraseToAnyPublisher()
+            }
             .map(\.data)
             .decode(type: R.self, decoder: env.decoder)
             .eraseToAnyPublisher()
+    }
+}
+
+public enum NetworkError: Error {
+    case validation
+    case other(Error)
+    
+    var validation: Bool {
+        guard case .validation = self else {
+            return false
+        }
+        
+        return true
+    }
+    
+    var other: Error? {
+        guard case let .other(error) = self else {
+            return nil
+        }
+        
+        return error
+    }
+}
+
+public protocol NetworkResponseValidator {
+    func isValid(response: URLResponse) -> Bool
+}
+
+open class AuthorizedNetwork: Network {
+    private let tokensStorage: Storage
+    
+    init(tokensStorage: Storage, env: Environment) {
+        self.tokensStorage = tokensStorage
+        
+        super.init(env: env)
+    }
+    
+    open override func modify(request: RequestBuilder) -> RequestBuilder {
+        request.header(key: "Authorization", value: "Bearer ")
     }
 }
 
@@ -47,5 +103,6 @@ extension Network {
         public let baseUrl: URL
         public let decoder: JSONDecoder
         public let encoder: JSONEncoder
+        public let responseValidator: NetworkResponseValidator?
     }
 }

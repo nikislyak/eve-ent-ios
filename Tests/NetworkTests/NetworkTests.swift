@@ -18,14 +18,25 @@ class MockURLSession: URLSessionProtocol {
     }
 }
 
+class MockValidator: NetworkResponseValidator {
+    var value: Bool = true
+    
+    func isValid(response: URLResponse) -> Bool {
+        value
+    }
+}
+
 class NetworkTests: XCTestCase {
     let url = URL(string: "https://github.com/")!
     
+    var mockValidator: MockValidator!
     var mockSession: MockURLSession!
     var network: Network!
 
     override func setUp() {
         super.setUp()
+        
+        mockValidator = MockValidator()
         
         mockSession = MockURLSession()
         
@@ -34,19 +45,49 @@ class NetworkTests: XCTestCase {
                 urlSession: mockSession,
                 baseUrl: url,
                 decoder: .init(),
-                encoder: .init()
+                encoder: .init(),
+                responseValidator: mockValidator
             )
         )
     }
 
     override func tearDown() {
+        mockValidator = nil
         mockSession = nil
         network = nil
         
         super.tearDown()
     }
 
-    func testPerform() {
+    func testPerformWithoutValidation() {
+        waiting { exp in
+            network
+                .perform(request: URLRequest(url: url))
+                .sink(exp: exp) { (data: Int) in
+                    XCTAssertEqual(data, 1)
+                    
+                    exp.fulfill()
+                }
+        }
+    }
+    
+    func testPerformWithAlwaysTrueValidation() {
+        mockValidator.value = true
+        
+        waiting { exp in
+            network
+                .perform(request: URLRequest(url: url))
+                .sink(exp: exp) { (data: Int) in
+                    XCTAssertEqual(data, 1)
+                    
+                    exp.fulfill()
+            }
+        }
+    }
+    
+    func testPerformWithAlwaysFalseValidation() {
+        mockValidator.value = false
+        
         waiting { exp in
             network
                 .perform(request: URLRequest(url: url))
