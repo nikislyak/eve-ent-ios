@@ -22,8 +22,8 @@ open class Network {
         self.env = env
     }
     
-    public func request(path: String) -> RequestBuilder {
-        .init(baseUrl: env.baseUrl, path: path)
+    public func request(path: String) -> IncompleteRequest {
+        .init(network: self, builder: .init(baseUrl: env.baseUrl, path: path))
     }
     
     open func perform<R: Decodable>(request: URLRequest) -> AnyPublisher<R, Error> {
