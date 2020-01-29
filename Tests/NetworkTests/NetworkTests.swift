@@ -118,7 +118,7 @@ class NetworkTests: XCTestCase {
         
         expectedRequest.httpMethod = "GET"
         
-        var builder = network.request(path: "")
+        var builder = network.request(path: "") as IncompleteRequest<String>
         
         builder = builder.method(.GET)
         

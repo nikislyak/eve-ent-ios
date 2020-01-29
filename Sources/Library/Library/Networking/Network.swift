@@ -1,5 +1,5 @@
 //
-//  NetworkingGateway.swift
+//  Network.swift
 //  Library
 //
 //  Created by Nikita Kislyakov on 23.01.2020.
@@ -22,7 +22,7 @@ open class Network {
         self.env = env
     }
     
-    public func request(path: String) -> IncompleteRequest {
+    public func request<R: Decodable>(path: String) -> IncompleteRequest<R> {
         .init(network: self, builder: modify(request: .init(baseUrl: env.baseUrl, path: path)))
     }
     
@@ -75,20 +75,6 @@ public enum NetworkError: Error {
 
 public protocol NetworkResponseValidator {
     func isValid(response: URLResponse) -> Bool
-}
-
-open class AuthorizedNetwork: Network {
-    private let tokensStorage: Storage
-    
-    init(tokensStorage: Storage, env: Environment) {
-        self.tokensStorage = tokensStorage
-        
-        super.init(env: env)
-    }
-    
-    open override func modify(request: RequestBuilder) -> RequestBuilder {
-        request.header(key: "Authorization", value: "Bearer ")
-    }
 }
 
 public typealias DataTaskResult = (data: Data, response: URLResponse)
