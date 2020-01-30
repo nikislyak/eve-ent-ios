@@ -38,14 +38,16 @@ class AuthController: BaseController<AuthView>, KeyboardManagable {
     
     @objc func signIn() {
         Just(useCasesFactory.makeAuthorizationUseCase())
-            .tryFlatMapLatest { [weak typedView] (auth: AuthorizationUseCase) in
+            .tryMap { [weak typedView] (auth: AuthorizationUseCase) in
                 auth.perform(
                     credentials: Credentials(
-                        email: try Email(rawValue: typedView?.blockView.view.emailTextField.text ?? ""),
-                        password: try Password(rawValue: typedView?.blockView.view.passwordTextField.text ?? "")
+                        email: typedView?.blockView.view.emailTextField.text ?? "",
+                        password: typedView?.blockView.view.passwordTextField.text ?? ""
                     )
                 )
             }
+            .flatMap { $0 }
+            .print()
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] in $0.error.map { _ in self?.state.email = "ERROR" } },

@@ -17,3 +17,9 @@ public protocol UserPersistenceGateway {
 public protocol AuthorizationGateway {
     func authorize(credentials: Credentials) -> AnyPublisher<Tokens, Error>
 }
+
+public protocol TokensStorageGateway {
+    func get() -> AnyPublisher<Tokens?, Error>
+    func save(_ tokens: Tokens) -> AnyPublisher<Void, Error>
+    func remove() -> AnyPublisher<Void, Error>
+}

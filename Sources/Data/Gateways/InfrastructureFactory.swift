@@ -37,7 +37,7 @@ public final class InfrastructureFactory {
     private lazy var network = Network(
         env: Network.Environment(
             urlSession: URLSession.shared,
-            baseUrl: URL(string: "")!,
+            baseUrl: URL(string: "https://github.com/")!,
             decoder: decoder,
             encoder: encoder,
             retriers: nil
@@ -80,5 +80,9 @@ public final class InfrastructureFactory {
     
     public func makeNetwork() -> Network {
         network
+    }
+    
+    public func makeTokensStorage() -> Storage {
+        userDefaultsStorage
     }
 }

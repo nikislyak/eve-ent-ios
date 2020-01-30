@@ -10,50 +10,46 @@ import Foundation
 import Combine
 import Library
 
-public class AuthorizationStateUseCase {
-    var user: AnyPublisher<User?, Error> {
-        userSubject.eraseToAnyPublisher()
-    }
-    
-    private var bag = Set<AnyCancellable>()
-    
-    private let userPersistence: UserPersistenceGateway
-    
-    private let userSubject = CurrentValueSubject<User?, Error>(nil)
-    
-    public init(_ userPersistence: UserPersistenceGateway) {
-        self.userPersistence = userPersistence
-        
-        userPersistence
-            .currentUser()
-            .sink(
-                receiveCompletion: { _ in },
-                receiveValue: { [weak self] in self?.userSubject.send($0) }
-            )
-            .store(in: &bag)
-    }
-}
-
 public class AuthorizationUseCase {
     private let authGateway: AuthorizationGateway
-    private let userPersistence: UserPersistenceGateway
+    private let tokensStorageGateway: TokensStorageGateway
     
     public init(
         _ authGateway: AuthorizationGateway,
-        _ userPersistence: UserPersistenceGateway
+        _ tokensStorage: TokensStorageGateway
     ) {
         self.authGateway = authGateway
-        self.userPersistence = userPersistence
+        self.tokensStorageGateway = tokensStorage
     }
     
     public func perform(credentials: Credentials) -> AnyPublisher<Void, Error> {
         authGateway
             .authorize(credentials: credentials)
-            .flatMapLatest(^\.user >>> userPersistence.set)
+            .flatMap(maxPublishers: .max(1), tokensStorageGateway.save)
             .eraseToAnyPublisher()
     }
     
     public func deauth() -> AnyPublisher<Void, Error> {
-        userPersistence.remove()
+        tokensStorageGateway.remove()
+    }
+    
+    public func state() -> AnyPublisher<AuthorizationState, Error> {
+        tokensStorageGateway
+            .get()
+            .map { $0.map { _ in .authorized } ?? .notAuthorized }
+            .eraseToAnyPublisher()
+    }
+}
+
+public enum AuthorizationState {
+    case authorized
+    case notAuthorized
+    
+    var isAuthorized: Bool {
+        guard case .authorized = self else {
+            return false
+        }
+        
+        return true
     }
 }
