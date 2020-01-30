@@ -16,7 +16,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     private lazy var coreDataFactory = CoreDataFactoryImpl()
     private lazy var infrastructureFactory = InfrastructureFactory(coreDataFactory: coreDataFactory)
-    private lazy var gatewaysFactory = GatewaysMockFactory(infrastructureFactory)
+    private lazy var gatewaysFactory = GatewaysFactoryImpl(infrastructureFactory)
     private lazy var useCasesFactory = UseCasesFactory(gatewaysFactory)
     
     private lazy var authFactory = AuthFactory(useCasesFactory: useCasesFactory, router: _router)

@@ -9,14 +9,14 @@
 import Foundation
 import Domain
 
-public final class GatewaysMockFactory: GatewaysFactory {
+public final class GatewaysFactoryImpl: GatewaysFactory {
     private let infrastructureFactory: InfrastructureFactory
     
     public init(_ infrastructureFactory: InfrastructureFactory) {
         self.infrastructureFactory = infrastructureFactory
     }
     
-    private lazy var authGateway = AuthorizationGatewayMock()
+    private lazy var authGateway = AuthorizationGatewayImpl(network: infrastructureFactory.makeNetwork())
     
     public func makeAuthorizationGateway() -> AuthorizationGateway {
         authGateway
