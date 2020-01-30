@@ -11,12 +11,15 @@ import CoreData
 import KeychainAccess
 import RouteComposer
 import Library
+import CoreDataKit
+import Networking
+import Combine
 
 public final class InfrastructureFactory {
     private let coreDataFactory: CoreDataFactory
     
-    private lazy var decoder = JSONDecoder()
-    private lazy var encoder = JSONEncoder()
+    private lazy var decoder = JSONDecoder() |> \.keyDecodingStrategy .~ .convertFromSnakeCase
+    private lazy var encoder = JSONEncoder() |> \.keyEncodingStrategy .~ .convertToSnakeCase
     
     private lazy var appInfo = ApplicationInfo(bundle: .main)
     private lazy var keychain = Keychain()
@@ -30,6 +33,33 @@ public final class InfrastructureFactory {
         
         return router
     }()
+    
+    private lazy var network = Network(
+        env: Network.Environment(
+            urlSession: URLSession.shared,
+            baseUrl: URL(string: "")!,
+            decoder: decoder,
+            encoder: encoder,
+            retriers: nil
+        )
+    )
+    
+    private lazy var authorizedNetwork = AuthorizedNetwork(
+        tokensStorage: userDefaultsStorage,
+        env: Network.Environment(
+            urlSession: URLSession.shared,
+            baseUrl: URL(string: "")!,
+            decoder: decoder,
+            encoder: encoder,
+            retriers: .init(
+                responseValidator: ResponseValidator(),
+                requestRestorer: Restorer(
+                    tokensStorage: userDefaultsStorage,
+                    network: network
+                )
+            )
+        )
+    )
     
     public init(coreDataFactory: CoreDataFactory) {
         self.coreDataFactory = coreDataFactory
@@ -46,5 +76,9 @@ public final class InfrastructureFactory {
     
     public func makeRouter() -> Router {
         router
+    }
+    
+    public func makeNetwork() -> Network {
+        network
     }
 }

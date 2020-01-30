@@ -9,22 +9,21 @@
 import Foundation
 import Combine
 import Domain
+import Networking
 
-class AuthorizationGatewayMock: AuthorizationGateway {
-    func authorize(credentials: Credentials) -> AnyPublisher<Tokens, Error> {
-        let tokens = Tokens(
-            accessToken: "",
-            refreshToken: "",
-            user: .init(
-                id: .zero,
-                firstName: "Ivan",
-                lastName: "Urgant",
-                avatarUrl: URL(string: "https://24smi.org/public/media/resize/800x-/celebrity/2017/06/29/WiR3chxn7Xru_ivan-urgant.jpg")
-            )
-        )
-        
-        return Result
-            .Publisher(tokens)
-            .eraseToAnyPublisher()
+public class AuthorizationGatewayImpl: AuthorizationGateway {
+    private let network: Network
+    
+    public init(network: Network) {
+        self.network = network
+    }
+    
+    public func authorize(credentials: Credentials) -> AnyPublisher<Tokens, Error> {
+        network
+            .request(path: "auth/", encoding: JSONEncoding())
+            .method(.POST)
+            .param(key: "email", value: credentials.email.value)
+            .param(key: "password", value: credentials.password.value)
+            .perform()
     }
 }

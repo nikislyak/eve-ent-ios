@@ -1,5 +1,7 @@
-github "SDWebImage/SDWebImage" "5.5.1"
+github "SDWebImage/SDWebImage" "5.5.2"
 github "ekazaev/route-composer" "2.5.1"
 github "freshOS/Stevia" "4.7.3"
 github "kishikawakatsumi/KeychainAccess" "v4.1.0"
+github "nikislyak/CoreDataKit" "a02befc8027261f2ece501627d7be99c2361636b"
+github "nikislyak/Networking" "88464da26a257df2ac4eb97686019c8bb8ca58c5"
 github "pointfreeco/swift-overture" "0.5.0"
