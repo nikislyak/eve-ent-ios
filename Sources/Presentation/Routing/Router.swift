@@ -8,23 +8,23 @@
 import Foundation
 import RouteComposer
 
-enum Screen {
+public enum Screen {
     case auth
 }
 
-protocol RouterAbstraction {
+public protocol RouterAbstraction {
     func navigate(to screen: Screen)
 }
 
-final class RouterAbstractionImpl: RouterAbstraction {
+public final class RouterAbstractionImpl: RouterAbstraction {
     private let routerImpl: Router
-    var factory: ScreenConfigurationsFactory!
+    public var factory: ScreenConfigurationsFactory!
     
-    init(_ router: Router) {
+    public init(_ router: Router) {
         self.routerImpl = router
     }
     
-    func navigate(to screen: Screen) {
+    public func navigate(to screen: Screen) {
         switch screen {
         case .auth:
             try? routerImpl.navigate(to: factory.auth, animated: true, completion: nil)

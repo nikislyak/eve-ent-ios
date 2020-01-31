@@ -15,36 +15,18 @@ targets:
     platform: iOS
     sources:
       - path: Sources/Eve-Ent
-      - path: Sources/Eve-Ent/Generated/L10n.swift
-        optional: true
-      - path: Sources/Eve-Ent/Generated/Assets.swift
-        optional: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.vstu.Eve-Ent
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: LYJJP2ZH5L
         TARGETED_DEVICE_FAMILY: 1
-        TARGET_PATH: Sources/Eve-Ent
-    prebuildScripts:
-      - script: |
-          mint run swiftgen swiftgen strings ${SCRIPT_INPUT_FILE_0} -t structured-swift4 --output ${SCRIPT_OUTPUT_FILE_0}
-        name: L10nGen
-        inputFiles:
-          - ${TARGET_PATH}/Resources/Localizable.strings
-        outputFiles:
-          - ${TARGET_PATH}/Generated/L10n.swift
-      - script: |
-          mint run swiftgen swiftgen xcassets ${SCRIPT_INPUT_FILE_0} -t swift4 --output ${SCRIPT_OUTPUT_FILE_0}
-        name: AssetsGen
-        inputFiles:
-          - ${TARGET_PATH}/Resources/Assets.xcassets
-        outputFiles:
-          - ${TARGET_PATH}/Generated/Assets.swift
     dependencies:
       - target: Domain
       - target: Data
       - target: Library
+      - target: Presentation
+      - target: Validation
       - carthage: Networking
       - carthage: CoreDataKit
       - carthage: Overture
@@ -105,3 +87,47 @@ targets:
     dependencies:
       - carthage: KeychainAccess
       - carthage: Stevia
+  
+  Presentation:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/Presentation
+      - path: Sources/Presentation/Generated/L10n.swift
+        optional: true
+      - path: Sources/Presentation/Generated/Assets.swift
+        optional: true
+    dependencies:
+      - target: Domain
+      - target: Library
+      - carthage: RouteComposer
+      - carthage: Overture
+    settings:
+      base:
+        TARGET_PATH: Sources/Presentation
+    prebuildScripts:
+      - script: |
+          mint run swiftgen swiftgen strings ${SCRIPT_INPUT_FILE_0} -t structured-swift4 --output ${SCRIPT_OUTPUT_FILE_0}
+        name: L10nGen
+        inputFiles:
+          - ${TARGET_PATH}/Resources/Localizable.strings
+        outputFiles:
+          - ${TARGET_PATH}/Generated/L10n.swift
+      - script: |
+          mint run swiftgen swiftgen xcassets ${SCRIPT_INPUT_FILE_0} -t swift4 --output ${SCRIPT_OUTPUT_FILE_0}
+        name: AssetsGen
+        inputFiles:
+          - ${TARGET_PATH}/Resources/Assets.xcassets
+        outputFiles:
+          - ${TARGET_PATH}/Generated/Assets.swift
+  
+  Validation:
+    type: framework
+    platform: iOS
+    sources:
+      - path: Sources/Validation
+    dependencies:
+      - target: Domain
+      - target: Presentation
+      - target: Library
+      - carthage: Overture

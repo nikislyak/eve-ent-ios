@@ -10,6 +10,8 @@ import UIKit
 import Combine
 import Data
 import Domain
+import Presentation
+import Validation
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
@@ -18,8 +20,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private lazy var infrastructureFactory = InfrastructureFactory(coreDataFactory: coreDataFactory)
     private lazy var gatewaysFactory = GatewaysFactoryImpl(infrastructureFactory)
     private lazy var useCasesFactory = UseCasesFactory(gatewaysFactory)
+    private lazy var validatorsFactory = ValidatorsFactoryImpl()
     
-    private lazy var authFactory = AuthFactory(useCasesFactory: useCasesFactory, router: _router)
+    private lazy var authFactory = AuthFactory(
+        useCasesFactory: useCasesFactory,
+        validatorsFactory: validatorsFactory,
+        router: _router
+    )
     
     private lazy var screensFactories = ScreensFactories(authFactory: authFactory)
     private lazy var screenConfigurationsFactory = ScreenConfigurationsFactoryImpl(screensFactories)
