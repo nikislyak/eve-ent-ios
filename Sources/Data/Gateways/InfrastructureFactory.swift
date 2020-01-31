@@ -44,6 +44,8 @@ public final class InfrastructureFactory {
         )
     )
     
+    private lazy var refreshTokensGateway = RefreshTokensGatewayImpl(network: network)
+    
     private lazy var authorizedNetwork = AuthorizedNetwork(
         tokensStorage: userDefaultsStorage,
         env: Network.Environment(
@@ -55,7 +57,7 @@ public final class InfrastructureFactory {
                 responseValidator: ResponseValidator(),
                 requestRestorer: Restorer(
                     tokensStorage: userDefaultsStorage,
-                    network: network
+                    refreshTokensGateway: refreshTokensGateway
                 )
             )
         )

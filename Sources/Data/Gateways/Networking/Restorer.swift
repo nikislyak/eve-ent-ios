@@ -11,31 +11,47 @@ import Combine
 import Library
 import Domain
 
+public protocol RefreshTokensGateway {
+    func newTokens(refreshToken: String) -> AnyPublisher<Tokens, Error>
+}
+
+public class RefreshTokensGatewayImpl: RefreshTokensGateway {
+    private let network: Network
+    
+    public init(network: Network) {
+        self.network = network
+    }
+    
+    public func newTokens(refreshToken: String) -> AnyPublisher<Tokens, Error> {
+        return network
+            .request(path: "auth/refresh/", encoding: JSONEncoding())
+            .method(.POST)
+            .param(key: "refresh_token", value: refreshToken)
+            .perform()
+    }
+}
+
 public class Restorer: RequestRestorer {
     public enum Error: Swift.Error {
         case notAuthorized
     }
     
     private let tokensStorage: Storage
-    private let network: Network
+    private let refreshTokensGateway: RefreshTokensGateway
     
-    public init(tokensStorage: Storage, network: Network) {
+    public init(tokensStorage: Storage, refreshTokensGateway: RefreshTokensGateway) {
         self.tokensStorage = tokensStorage
-        self.network = network
+        self.refreshTokensGateway = refreshTokensGateway
     }
     
     public func restore() -> AnyPublisher<Void, Swift.Error> {
         Just(())
-            .tryMap { [network, tokensStorage] _ -> AnyPublisher<Tokens, Swift.Error> in
+            .tryMap { [refreshTokensGateway, tokensStorage] _ -> AnyPublisher<Tokens, Swift.Error> in
                 guard let tokens = tokensStorage.getObject(forKey: "tokens") as Tokens? else {
                     return Fail(error: Error.notAuthorized).eraseToAnyPublisher()
                 }
                 
-                return network
-                    .request(path: "auth/refresh/", encoding: JSONEncoding())
-                    .method(.POST)
-                    .param(key: "refresh_token", value: tokens.refreshToken)
-                    .perform()
+                return refreshTokensGateway.newTokens(refreshToken: tokens.refreshToken)
             }
             .flatMap { $0 }
             .map { [tokensStorage] in
