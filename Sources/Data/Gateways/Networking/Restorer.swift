@@ -45,8 +45,8 @@ public class Restorer: RequestRestorer {
     }
     
     public func restore() -> AnyPublisher<Void, Swift.Error> {
-        Just(())
-            .tryMap { [refreshTokensGateway, tokensStorage] _ -> AnyPublisher<Tokens, Swift.Error> in
+        Result.Publisher(())
+            .map { [refreshTokensGateway, tokensStorage] _ -> AnyPublisher<Tokens, Swift.Error> in
                 guard let tokens = tokensStorage.getObject(forKey: "tokens") as Tokens? else {
                     return Fail(error: Error.notAuthorized).eraseToAnyPublisher()
                 }

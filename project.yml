@@ -37,7 +37,8 @@ targets:
       - sdk: CoreData.framework
     scheme:
       testTargets:
-        - Eve-Ent-Tests
+        - name: Eve-Ent-Tests
+          parallelizable: true
       gatherCoverageData: true
 
   Eve-Ent-Tests:
@@ -50,11 +51,12 @@ targets:
       - target: Domain
       - target: Library
       - target: Data
+      - target: Validation
       - carthage: Networking
       - carthage: CoreDataKit
       - carthage: Overture
       - sdk: CoreData.framework
-  
+
   Domain:
     type: framework
     platform: iOS

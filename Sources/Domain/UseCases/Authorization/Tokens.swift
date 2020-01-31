@@ -8,7 +8,7 @@
 
 import Foundation
 
-public struct Tokens: Codable {
+public struct Tokens: Codable, Equatable {
     public var accessToken: String
     public var refreshToken: String
     
