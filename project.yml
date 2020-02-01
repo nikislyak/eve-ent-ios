@@ -1,7 +1,7 @@
 name: Eve-Ent
 
 options:
-  bundleIdPrefix: com.vstu.Eve-Ent
+  bundleIdPrefix: com.nikislyak.Eve-Ent
   deploymentTarget:
     iOS: "13.2"
   transitivelyLinkDependencies: true
@@ -17,7 +17,7 @@ targets:
       - path: Sources/Eve-Ent
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.vstu.Eve-Ent
+        PRODUCT_BUNDLE_IDENTIFIER: com.nikislyak.Eve-Ent
         CODE_SIGN_STYLE: Automatic
         DEVELOPMENT_TEAM: LYJJP2ZH5L
         TARGETED_DEVICE_FAMILY: 1
