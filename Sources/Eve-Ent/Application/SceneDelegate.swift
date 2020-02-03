@@ -25,17 +25,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private lazy var authFactory = AuthFactory(
         useCasesFactory: useCasesFactory,
         validatorsFactory: validatorsFactory,
-        router: _router
+        router: router
     )
     
     private lazy var screensFactories = ScreensFactories(authFactory: authFactory)
     private lazy var screenConfigurationsFactory = ScreenConfigurationsFactoryImpl(screensFactories)
     
-    private lazy var _router = RouterAbstractionImpl(infrastructureFactory.makeRouter())
-    private var router: RouterAbstraction {
-        _router.factory = screenConfigurationsFactory
-        
-        return _router
+    private lazy var router: RouterAbstraction = RouterAbstractionImpl(router: infrastructureFactory.makeRouter()) { [unowned self] in
+        self.screenConfigurationsFactory
     }
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {

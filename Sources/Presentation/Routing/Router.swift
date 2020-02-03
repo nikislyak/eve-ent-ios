@@ -18,16 +18,17 @@ public protocol RouterAbstraction {
 
 public final class RouterAbstractionImpl: RouterAbstraction {
     private let routerImpl: Router
-    public var factory: ScreenConfigurationsFactory!
+    private let factory: () -> ScreenConfigurationsFactory
     
-    public init(_ router: Router) {
+    public init(router: Router, factory: @escaping () -> ScreenConfigurationsFactory) {
         self.routerImpl = router
+        self.factory = factory
     }
     
     public func navigate(to screen: Screen) {
         switch screen {
         case .auth:
-            try? routerImpl.navigate(to: factory.auth, animated: true, completion: nil)
+            try? routerImpl.navigate(to: factory().auth, animated: true, completion: nil)
         }
     }
 }
