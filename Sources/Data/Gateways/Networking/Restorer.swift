@@ -10,6 +10,7 @@ import Networking
 import Combine
 import Library
 import Domain
+import Overture
 
 public protocol RefreshTokensGateway {
     func newTokens(refreshToken: String) -> AnyPublisher<Tokens, Error>
@@ -45,18 +46,16 @@ public class Restorer: RequestRestorer {
     }
     
     public func restore() -> AnyPublisher<Void, Swift.Error> {
-        Result.Publisher(())
-            .map { [refreshTokensGateway, tokensStorage] _ -> AnyPublisher<Tokens, Swift.Error> in
-                guard let tokens = tokensStorage.getObject(forKey: "tokens") as Tokens? else {
-                    return Fail(error: Error.notAuthorized).eraseToAnyPublisher()
-                }
-                
-                return refreshTokensGateway.newTokens(refreshToken: tokens.refreshToken)
+        Result {
+            guard let tokens = tokensStorage.getObject(forKey: "tokens") as Tokens? else {
+                throw Error.notAuthorized
             }
-            .flatMap { $0 }
-            .map { [tokensStorage] in
-                tokensStorage.save(object: $0, forKey: "tokens")
-            }
-            .eraseToAnyPublisher()
+            
+            return tokens.refreshToken
+        }
+        .publisher
+        .flatMap(refreshTokensGateway.newTokens)
+        .map(flip(curry(tokensStorage.save))("tokens"))
+        .eraseToAnyPublisher()
     }
 }

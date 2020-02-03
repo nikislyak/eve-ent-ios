@@ -38,8 +38,8 @@ public final class InfrastructureFactory {
         env: Network.Environment(
             urlSession: URLSession.shared,
             baseUrl: URL(string: "https://github.com/")!,
-            decoder: decoder,
-            encoder: encoder,
+            responseDecoder: decoder,
+            bodyEncoder: encoder,
             retriers: nil
         )
     )
@@ -51,8 +51,8 @@ public final class InfrastructureFactory {
         env: Network.Environment(
             urlSession: URLSession.shared,
             baseUrl: URL(string: "")!,
-            decoder: decoder,
-            encoder: encoder,
+            responseDecoder: decoder,
+            bodyEncoder: encoder,
             retriers: .init(
                 responseValidator: ResponseValidator(),
                 requestRestorer: Restorer(
