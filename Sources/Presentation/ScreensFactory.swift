@@ -10,10 +10,13 @@ import UIKit
 
 public struct ScreensFactories {
     let authFactory: AuthFactory
+    let mainFactory: MainFactory
     
     public init(
-        authFactory: AuthFactory
+        authFactory: AuthFactory,
+        mainFactory: MainFactory
     ) {
         self.authFactory = authFactory
+        self.mainFactory = mainFactory
     }
 }

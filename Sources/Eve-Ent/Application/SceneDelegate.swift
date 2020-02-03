@@ -28,7 +28,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         router: router
     )
     
-    private lazy var screensFactories = ScreensFactories(authFactory: authFactory)
+    private lazy var mainFactory = MainFactory(
+        useCasesFactory: useCasesFactory,
+        validatorsFactory: validatorsFactory,
+        router: router
+    )
+    
+    private lazy var screensFactories = ScreensFactories(
+        authFactory: authFactory,
+        mainFactory: mainFactory
+    )
+    
     private lazy var screenConfigurationsFactory = ScreenConfigurationsFactoryImpl(screensFactories)
     
     private lazy var router: RouterAbstraction = RouterAbstractionImpl(router: infrastructureFactory.makeRouter()) { [unowned self] in

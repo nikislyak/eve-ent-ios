@@ -73,7 +73,7 @@ public class AuthController: BaseController<AuthView>, KeyboardManagable {
     
     private func handle(validationError: AuthValidationError) {
         alert(style: .alert)
-            .action(title: "OK", style: .default)
+            .action(title: "OK", style: .default) { _ in self.router.navigate(to: .main) }
             .set(\.title, "Incorrect input")
             .set(\.message, validationError.localizedDescription)
             .show() as Void

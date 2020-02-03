@@ -10,6 +10,7 @@ import RouteComposer
 
 public enum Screen {
     case auth
+    case main
 }
 
 public protocol RouterAbstraction {
@@ -29,6 +30,8 @@ public final class RouterAbstractionImpl: RouterAbstraction {
         switch screen {
         case .auth:
             try? routerImpl.navigate(to: factory().auth, animated: true, completion: nil)
+        case .main:
+            try? routerImpl.navigate(to: factory().main, animated: true, completion: nil)
         }
     }
 }
