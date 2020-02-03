@@ -16,5 +16,11 @@ public class MainController: BaseController<MainRootView> {
         navigationItem.title = "Main"
         tabBarItem.title = "Main"
         tabBarItem.image = UIImage(systemName: "circle.grid.3x3.fill")
+        
+        navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .close, target: self, action: #selector(close))
+    }
+    
+    @objc func close() {
+        router.navigate(to: .auth)
     }
 }

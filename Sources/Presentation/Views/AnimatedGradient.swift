@@ -17,7 +17,7 @@ public extension AnimatedGradient {
         }
     }
 
-    private class State {
+    private struct State {
         let colors: [ColorBox]
         let duration: TimeInterval
         var currentIndex: Int
@@ -32,7 +32,7 @@ public extension AnimatedGradient {
             return colors[currentIndex]
         }
         
-        @discardableResult func incrementIndex() -> State {
+        @discardableResult mutating func incrementIndex() -> State {
             currentIndex = (currentIndex == colors.count - 1) ? 0 : (currentIndex + 1)
             return self
         }
@@ -42,7 +42,7 @@ public extension AnimatedGradient {
 final public class AnimatedGradient: CALayer {
     // MARK: Vars
     private var startBox: ColorBox?
-    private let state: State
+    private var state: State
 
     // MARK: Init
     public override init(layer: Any) {
@@ -55,14 +55,16 @@ final public class AnimatedGradient: CALayer {
     public init(
         colors: [ColorBox],
         duration: TimeInterval,
-        startBox: ColorBox? = nil)
-    {
+        startBox: ColorBox? = nil
+    ) {
         self.state = State(
             colors: colors,
             duration: duration,
             currentIndex: 0
         )
+        
         self.startBox = startBox
+        
         super.init()
     }
     
@@ -73,6 +75,7 @@ final public class AnimatedGradient: CALayer {
     // MARK: Public functions
     public func startAnimation() {
         guard state.colors.count > 0 else { return }
+        
         if let startBox = startBox {
             executeInitialColorAnimation(startBox: startBox)
         } else {
@@ -89,9 +92,9 @@ final public class AnimatedGradient: CALayer {
         let newLayer = getGradientLayer(for: startBox)
         newLayer.frame = self.bounds
         self.addSublayer(newLayer)
-        insertAnimation(in: newLayer, for: state) { (state) in
-            self.startBox = nil
-            self.executeAnimation()
+        insertAnimation(in: newLayer, for: state) { [weak self] state in
+            self?.startBox = nil
+            self?.executeAnimation()
         }
     }
     
@@ -99,29 +102,34 @@ final public class AnimatedGradient: CALayer {
         let newLayer = getGradientLayer(for: state.currentColorBox)
         newLayer.frame = self.bounds
         self.addSublayer(newLayer)
-        insertAnimation(in: newLayer, for: state.incrementIndex()) { (state) in
-            self.executeAnimation()
+        insertAnimation(in: newLayer, for: state.incrementIndex()) { [weak self] state in
+            self?.executeAnimation()
         }
     }
 
     private func insertAnimation(
         in layer: CAGradientLayer,
         for state: State,
-        completionHandler: @escaping (State) -> Void )
-    {
+        completionHandler: @escaping (State) -> Void
+    ) {
         CATransaction.begin()
+        
         let animation = CABasicAnimation(keyPath: "colors")
+        
         animation.duration = state.duration
         animation.toValue = state.currentColorBox.cgColor
         animation.fillMode = CAMediaTimingFillMode.forwards
         animation.isRemovedOnCompletion = false
+        
         CATransaction.setCompletionBlock {
             layer.removeFromSuperlayer()
+            
             completionHandler(state)
         }
+        
         layer.add(animation, forKey: "colorChange")
+        
         CATransaction.commit()
-
     }
         
     private func getGradientLayer(for colorBox: ColorBox) -> CAGradientLayer {
