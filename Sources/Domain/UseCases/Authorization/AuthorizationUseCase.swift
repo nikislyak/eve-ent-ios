@@ -45,7 +45,7 @@ public enum AuthorizationState {
     case authorized
     case notAuthorized
     
-    var isAuthorized: Bool {
+    public var isAuthorized: Bool {
         guard case .authorized = self else {
             return false
         }
