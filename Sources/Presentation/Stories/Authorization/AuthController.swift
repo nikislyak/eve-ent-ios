@@ -55,9 +55,7 @@ public class AuthController: BaseController<AuthView>, KeyboardManagable {
                 
                 return creds
             }
-            .map { [useCasesFactory] creds in
-                useCasesFactory.makeAuthorizationUseCase().perform(credentials: creds)
-            }
+            .map(useCasesFactory.makeAuthorizationUseCase().perform)
             .flatMap(it)
             .receive(on: DispatchQueue.main)
             .sink(
