@@ -34,27 +34,6 @@ public enum PasswordValidationRule {
     }
 }
 
-//public enum AuthInputViolation {
-//    case email([EmailValidationRule])
-//    case password([PasswordValidationRule])
-//
-//    var emailRules: [EmailValidationRule] {
-//        guard case let .email(rules) = self else {
-//            return []
-//        }
-//
-//        return rules
-//    }
-//
-//    var passwordRules: [PasswordValidationRule] {
-//        guard case let .password(rules) = self else {
-//            return []
-//        }
-//
-//        return rules
-//    }
-//}
-
 public struct AuthInputViolations {
     public struct Email {
         public var rules: [EmailValidationRule]
