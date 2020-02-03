@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 import RouteComposer
 
-public class MainFactory: BaseScreenFactory<MainController> {}
+public final class MainFactory: BaseScreenFactory<MainController> {}
 
 extension MainFactory: Factory {
     public typealias ViewController = MainController

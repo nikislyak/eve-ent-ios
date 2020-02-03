@@ -18,7 +18,7 @@ public class BaseScreenFactory<S: UserInterfaceModule> {
     let validatorsFactory: ValidatorsFactory
     let router: RouterAbstraction
     
-    public init(
+    public required init(
         useCasesFactory: UseCasesFactory,
         validatorsFactory: ValidatorsFactory,
         router: RouterAbstraction

@@ -22,17 +22,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private lazy var useCasesFactory = UseCasesFactory(gatewaysFactory)
     private lazy var validatorsFactory = ValidatorsFactoryImpl()
     
-    private lazy var authFactory = AuthFactory(
-        useCasesFactory: useCasesFactory,
-        validatorsFactory: validatorsFactory,
-        router: router
-    )
-    
-    private lazy var mainFactory = MainFactory(
-        useCasesFactory: useCasesFactory,
-        validatorsFactory: validatorsFactory,
-        router: router
-    )
+    private lazy var authFactory: AuthFactory = makeFactory()
+    private lazy var mainFactory: MainFactory = makeFactory()
     
     private lazy var screensFactories = ScreensFactories(
         authFactory: authFactory,
@@ -43,6 +34,14 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     private lazy var router: RouterAbstraction = RouterAbstractionImpl(router: infrastructureFactory.makeRouter()) { [unowned self] in
         self.screenConfigurationsFactory
+    }
+    
+    private func makeFactory<S: UserInterfaceModule, F: BaseScreenFactory<S>>() -> F {
+        .init(
+            useCasesFactory: useCasesFactory,
+            validatorsFactory: validatorsFactory,
+            router: router
+        )
     }
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
