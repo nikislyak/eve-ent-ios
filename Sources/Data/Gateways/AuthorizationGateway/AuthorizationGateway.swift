@@ -22,8 +22,8 @@ public class AuthorizationGatewayImpl: AuthorizationGateway {
         network
             .request(path: "auth/", encoding: JSONEncoding())
             .method(.POST)
-            .param(key: "email", value: credentials.email.value)
-            .param(key: "password", value: credentials.password.value)
+            .param(key: "email", value: credentials.email)
+            .param(key: "password", value: credentials.password)
             .perform()
     }
 }

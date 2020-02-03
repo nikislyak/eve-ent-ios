@@ -9,18 +9,18 @@ import Foundation
 import UIKit
 import RouteComposer
 
-protocol ScreenConfigurationsFactory {
+public protocol ScreenConfigurationsFactory {
     var auth: DestinationStep<AuthController, Any?> { get }
 }
 
-final class ScreenConfigurationsFactoryImpl: ScreenConfigurationsFactory {
+public final class ScreenConfigurationsFactoryImpl: ScreenConfigurationsFactory {
     private let screensFactories: ScreensFactories
     
-    init(_ screensFactories: ScreensFactories) {
+    public init(_ screensFactories: ScreensFactories) {
         self.screensFactories = screensFactories
     }
     
-    var auth: DestinationStep<AuthController, Any?> {
+    public var auth: DestinationStep<AuthController, Any?> {
         StepAssembly(
             finder: NilFinder<AuthController, Any?>(),
             factory: screensFactories.authFactory

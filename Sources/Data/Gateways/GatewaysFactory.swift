@@ -22,9 +22,9 @@ public final class GatewaysFactoryImpl: GatewaysFactory {
         authGateway
     }
     
-    private lazy var userPersistence = UserPersistenceGatewayMock()
+    private lazy var tokensStorageGateway = TokensStorageGatewayImpl(tokensStorage: infrastructureFactory.makeTokensStorage())
     
-    public func makeUserPersistenceGateway() -> UserPersistenceGateway {
-        userPersistence
+    public func makeTokensStorageGateway() -> TokensStorageGateway {
+        tokensStorageGateway
     }
 }

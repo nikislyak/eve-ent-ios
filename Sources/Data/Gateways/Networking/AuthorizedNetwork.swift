@@ -9,40 +9,7 @@ import Foundation
 import Networking
 import Combine
 import Library
-
-public class ResponseValidator: NetworkResponseValidator {
-    public func isValid(response: URLResponse) -> Bool {
-        (response as? HTTPURLResponse).map {
-            !(400 ..< 500 ~= $0.statusCode)
-        } ?? true
-    }
-}
-
-public class Restorer: RequestRestorer {
-    private let tokensStorage: Storage
-    private let network: Network
-    
-    public init(tokensStorage: Storage, network: Network) {
-        self.tokensStorage = tokensStorage
-        self.network = network
-    }
-    
-    public func restore() -> AnyPublisher<Void, Error> {
-        Just(())
-            .tryMap { [network] _ -> AnyPublisher<String, Error> in
-                network
-                    .request(path: "auth/refresh")
-                    .method(.POST)
-                    .body(data: try JSONEncoder().encode(""))
-                    .perform()
-        }
-        .flatMap { $0 }
-        .map { [tokensStorage] in
-            tokensStorage.save(object: $0, forKey: "tokens")
-        }
-        .eraseToAnyPublisher()
-    }
-}
+import Domain
 
 public class AuthorizedNetwork: Network {
     private let tokensStorage: Storage
@@ -56,8 +23,9 @@ public class AuthorizedNetwork: Network {
     override public func modify(request: RequestBuilder) -> RequestBuilder {
         tokensStorage
             .getObject(forKey: "tokens")
+            .flatMap { $0 as Tokens? }
             .map {
-                request.header(key: "Authorization", value: "Bearer " + $0)
+                request.header(key: "Authorization", value: "Bearer " + $0.accessToken)
             } ?? request
     }
 }

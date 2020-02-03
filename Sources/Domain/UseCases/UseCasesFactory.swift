@@ -17,26 +17,10 @@ public final class UseCasesFactory {
     
     private lazy var auth = AuthorizationUseCase(
         gatewaysFactory.makeAuthorizationGateway(),
-        gatewaysFactory.makeUserPersistenceGateway()
-    )
-    
-    private lazy var authState = AuthorizationStateUseCase(
-        gatewaysFactory.makeUserPersistenceGateway()
-    )
-    
-    private lazy var editProfile = EditProfileUseCase(
-        gatewaysFactory.makeUserPersistenceGateway()
+        gatewaysFactory.makeTokensStorageGateway()
     )
     
     public func makeAuthorizationUseCase() -> AuthorizationUseCase {
         auth
-    }
-    
-    public func makeAuthorizationStateUseCase() -> AuthorizationStateUseCase {
-        authState
-    }
-    
-    public func makeEditProfileUseCase() -> EditProfileUseCase {
-        editProfile
     }
 }

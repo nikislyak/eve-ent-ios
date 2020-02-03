@@ -11,15 +11,16 @@ import Combine
 import Library
 import Domain
 
-protocol StateDriven: class {
+public protocol StateDriven: class {
     associatedtype State
     
     func render(_ state: State)
 }
 
-class BaseController<View: UIView & StateDriven>: UIViewController, UserInterfaceModule where View.State: EmptyInitializable {
+public class BaseController<View: UIView & StateDriven>: UIViewController, UserInterfaceModule where View.State: EmptyInitializable {
     let useCasesFactory: UseCasesFactory
     let router: RouterAbstraction
+    let validatorsFactory: ValidatorsFactory
     
     var state: View.State = .init() {
         didSet {
@@ -33,8 +34,13 @@ class BaseController<View: UIView & StateDriven>: UIViewController, UserInterfac
     
     var bag = Set<AnyCancellable>()
     
-    required init(useCasesFactory: UseCasesFactory, router: RouterAbstraction) {
+    public required init(
+        useCasesFactory: UseCasesFactory,
+        validatorsFactory: ValidatorsFactory,
+        router: RouterAbstraction
+    ) {
         self.useCasesFactory = useCasesFactory
+        self.validatorsFactory = validatorsFactory
         self.router = router
         
         super.init(nibName: nil, bundle: nil)
@@ -51,12 +57,12 @@ class BaseController<View: UIView & StateDriven>: UIViewController, UserInterfac
     
     var typedView: View!
     
-    override func loadView() {
+    override public func loadView() {
         typedView = View()
         view = typedView
     }
     
-    override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
         
         makeSubscriptions().store(in: &bag)

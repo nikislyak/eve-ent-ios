@@ -155,11 +155,13 @@ public class AuthView: UIView {
 }
 
 extension AuthView: StateDriven {
-    struct State: EmptyInitializable {
+    public struct State: EmptyInitializable {
         var email = ""
+        
+        public init() {}
     }
     
-    func render(_ state: AuthView.State) {
+    public func render(_ state: AuthView.State) {
         blockView.view.emailTextField.text = state.email
     }
 }
