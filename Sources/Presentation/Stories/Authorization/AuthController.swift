@@ -55,8 +55,7 @@ public class AuthController: BaseController<AuthView>, KeyboardManagable {
                 
                 return creds
             }
-            .map(useCasesFactory.makeAuthorizationUseCase().perform)
-            .flatMap(it)
+            .flatMap(useCasesFactory.makeAuthorizationUseCase().perform)
             .receive(on: DispatchQueue.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
@@ -75,8 +74,8 @@ public class AuthController: BaseController<AuthView>, KeyboardManagable {
     private func handle(validationError: AuthValidationError) {
         alert(style: .alert)
             .action(title: "OK", style: .default)
-            .set(\.title, value: "Incorrect input")
-            .set(\.message, value: validationError.localizedDescription)
+            .set(\.title, "Incorrect input")
+            .set(\.message, validationError.localizedDescription)
             .show() as Void
     }
 }

@@ -33,7 +33,7 @@ public struct AlertBuilder {
         return .init(controller: controller)
     }
     
-    public func set<V>(_ keyPath: ReferenceWritableKeyPath<UIAlertController, V>, value: V) -> Self {
+    public func set<V>(_ keyPath: ReferenceWritableKeyPath<UIAlertController, V>, _ value: V) -> Self {
         controller[keyPath: keyPath] = value
         
         return .init(controller: controller)
@@ -65,8 +65,8 @@ public struct IncompleteAlert {
         .init(controller: controller, builder: builder.textField(configurationHandler: configurationHandler))
     }
     
-    public func set<V>(_ keyPath: ReferenceWritableKeyPath<UIAlertController, V>, value: V) -> Self {
-        .init(controller: controller, builder: builder.set(keyPath, value: value))
+    public func set<V>(_ keyPath: ReferenceWritableKeyPath<UIAlertController, V>, _ value: V) -> Self {
+        .init(controller: controller, builder: builder.set(keyPath, value))
     }
     
     public func show() {
