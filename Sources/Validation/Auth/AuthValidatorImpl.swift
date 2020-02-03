@@ -36,7 +36,7 @@ struct EmailValidator {
         
         var violatedRules: [EmailValidationRule] = []
         
-        if !email.contains("@") {
+        if email.range(of: "[A-Z0-9a-z.-_]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,3}", options: .regularExpression) == nil {
             violatedRules.append(.format)
             
             hasViolations = true
