@@ -34,40 +34,53 @@ public enum PasswordValidationRule {
     }
 }
 
-public enum AuthInputViolation {
-    case email([EmailValidationRule])
-    case password([PasswordValidationRule])
-    
-    var emailRules: [EmailValidationRule] {
-        guard case let .email(rules) = self else {
-            return []
-        }
-        
-        return rules
-    }
-    
-    var passwordRules: [PasswordValidationRule] {
-        guard case let .password(rules) = self else {
-            return []
-        }
-        
-        return rules
-    }
-}
+//public enum AuthInputViolation {
+//    case email([EmailValidationRule])
+//    case password([PasswordValidationRule])
+//
+//    var emailRules: [EmailValidationRule] {
+//        guard case let .email(rules) = self else {
+//            return []
+//        }
+//
+//        return rules
+//    }
+//
+//    var passwordRules: [PasswordValidationRule] {
+//        guard case let .password(rules) = self else {
+//            return []
+//        }
+//
+//        return rules
+//    }
+//}
 
-public enum AuthValidatorResult {
-    case valid
-    case invalid([AuthInputViolation])
-    
-    var violations: [AuthInputViolation] {
-        guard case let .invalid(violations) = self else {
-            return []
-        }
+public struct AuthInputViolations {
+    public struct Email {
+        public var rules: [EmailValidationRule]
         
-        return violations
+        public init(rules: [EmailValidationRule]) {
+            self.rules = rules
+        }
+    }
+    
+    public struct Password {
+        public var rules: [PasswordValidationRule]
+        
+        public init(rules: [PasswordValidationRule]) {
+            self.rules = rules
+        }
+    }
+    
+    public var email: Email?
+    public var password: Password?
+    
+    public init(email: Email?, password: Password?) {
+        self.email = email
+        self.password = password
     }
 }
 
 public protocol AuthValidator {
-    func validate(credentials: Credentials) -> AuthValidatorResult
+    func validate(credentials: Credentials) -> AuthInputViolations?
 }

@@ -43,14 +43,13 @@ public class AuthController: BaseController<AuthView>, KeyboardManagable {
         )
         
         Just(creds)
-            .receive(on: DispatchQueue.global())
+            .receive(on: DispatchQueue.global(qos: .userInteractive))
             .tryMap { [validatorsFactory] creds -> Credentials in
                 let violations = validatorsFactory
                     .makeAuthValidator()
                     .validate(credentials: creds)
-                    .violations
                 
-                if !violations.isEmpty {
+                if let violations = violations {
                     throw AuthValidationError(violations: violations)
                 }
                 
@@ -76,33 +75,21 @@ public class AuthController: BaseController<AuthView>, KeyboardManagable {
     }
     
     private func handle(validationError: AuthValidationError) {
-        let alertController = UIAlertController(
-            title: "Incorrect input",
-            message: validationError.localizedDescription,
-            preferredStyle: .alert
-        )
-        
-        alertController.addAction(UIAlertAction(title: "OK", style: .default))
-        
-        show(alertController, sender: self)
+        alert(style: .alert)
+            .action(title: "OK", style: .default)
+            .set(\.title, value: "Incorrect input")
+            .set(\.message, value: validationError.localizedDescription)
+            .show() as Void
     }
 }
 
 struct AuthValidationError: Error {
-    var violations: [AuthInputViolation]
+    var violations: AuthInputViolations
     
     var localizedDescription: String {
-        let emailRules = violations.reduce([]) {
-            $0 + $1.emailRules
-        }
+        let emailRules = violations.email?.rules.map { $0.description }.joined(separator: "\n")
+        let passwordRules = violations.password?.rules.map { $0.description }.joined(separator: "\n")
         
-        let passwordRules = violations.reduce([]) {
-            $0 + $1.passwordRules
-        }
-        
-        let emailDescriptions = emailRules.map { $0.description }.joined(separator: "\n")
-        let passwordDescriptions = passwordRules.map { $0.description }.joined(separator: "\n")
-        
-        return [emailDescriptions, passwordDescriptions].joined(separator: "\n")
+        return [emailRules, passwordRules].compactMap(it).joined(separator: "\n")
     }
 }
