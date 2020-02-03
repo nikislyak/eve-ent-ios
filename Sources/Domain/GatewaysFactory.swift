@@ -9,5 +9,5 @@ import Foundation
 
 public protocol GatewaysFactory {
     func makeAuthorizationGateway() -> AuthorizationGateway
-    func makeUserPersistenceGateway() -> UserPersistenceGateway
+    func makeTokensStorageGateway() -> TokensStorageGateway
 }

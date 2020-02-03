@@ -10,6 +10,8 @@ import UIKit
 import Combine
 import Data
 import Domain
+import Presentation
+import Validation
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
@@ -18,17 +20,19 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private lazy var infrastructureFactory = InfrastructureFactory(coreDataFactory: coreDataFactory)
     private lazy var gatewaysFactory = GatewaysFactoryImpl(infrastructureFactory)
     private lazy var useCasesFactory = UseCasesFactory(gatewaysFactory)
+    private lazy var validatorsFactory = ValidatorsFactoryImpl()
     
-    private lazy var authFactory = AuthFactory(useCasesFactory: useCasesFactory, router: _router)
+    private lazy var authFactory = AuthFactory(
+        useCasesFactory: useCasesFactory,
+        validatorsFactory: validatorsFactory,
+        router: router
+    )
     
     private lazy var screensFactories = ScreensFactories(authFactory: authFactory)
     private lazy var screenConfigurationsFactory = ScreenConfigurationsFactoryImpl(screensFactories)
     
-    private lazy var _router = RouterAbstractionImpl(infrastructureFactory.makeRouter())
-    private var router: RouterAbstraction {
-        _router.factory = screenConfigurationsFactory
-        
-        return _router
+    private lazy var router: RouterAbstraction = RouterAbstractionImpl(router: infrastructureFactory.makeRouter()) { [unowned self] in
+        self.screenConfigurationsFactory
     }
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {

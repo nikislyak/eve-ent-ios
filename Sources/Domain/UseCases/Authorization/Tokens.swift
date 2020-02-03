@@ -8,15 +8,12 @@
 
 import Foundation
 
-public struct Tokens: Codable {
+public struct Tokens: Codable, Equatable {
     public var accessToken: String
     public var refreshToken: String
     
-    public var user: User
-    
-    public init(accessToken: String, refreshToken: String, user: User) {
+    public init(accessToken: String, refreshToken: String) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken
-        self.user = user
     }
 }

@@ -8,10 +8,10 @@
 import Foundation
 import UIKit
 
-struct ScreensFactories {
+public struct ScreensFactories {
     let authFactory: AuthFactory
     
-    init(
+    public init(
         authFactory: AuthFactory
     ) {
         self.authFactory = authFactory

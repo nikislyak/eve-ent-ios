@@ -10,11 +10,5 @@ Authorization.EmailTextField.Placeholder = "Email";
 Authorization.PasswordTextField.Placeholder = "Password";
 Authorization.SignInButton.Title = "Sign In";
 
-Account.NavigationBar.Title = "Account";
-Account.TabBar.Title = "Account";
-
-EditProfile.NavigationBar.Title = "Edit Profile";
-EditProfile.FirstNameHint = "First Name";
-EditProfile.LastNameHint = "Last Name";
-
-Common.Save = "Save";
+Validation.Auth.Email.FormatViolation = "Incorrect email format";
+Validation.Auth.Password.RequiredLengthViolation = "Required password length: from %@ to %@ symbols, entered: %@ symbols";

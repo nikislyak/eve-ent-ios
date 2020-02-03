@@ -37,25 +37,27 @@ public final class InfrastructureFactory {
     private lazy var network = Network(
         env: Network.Environment(
             urlSession: URLSession.shared,
-            baseUrl: URL(string: "")!,
-            decoder: decoder,
-            encoder: encoder,
+            baseUrl: URL(string: "https://github.com/")!,
+            responseDecoder: decoder,
+            bodyEncoder: encoder,
             retriers: nil
         )
     )
+    
+    private lazy var refreshTokensGateway = RefreshTokensGatewayImpl(network: network)
     
     private lazy var authorizedNetwork = AuthorizedNetwork(
         tokensStorage: userDefaultsStorage,
         env: Network.Environment(
             urlSession: URLSession.shared,
             baseUrl: URL(string: "")!,
-            decoder: decoder,
-            encoder: encoder,
+            responseDecoder: decoder,
+            bodyEncoder: encoder,
             retriers: .init(
                 responseValidator: ResponseValidator(),
                 requestRestorer: Restorer(
                     tokensStorage: userDefaultsStorage,
-                    network: network
+                    refreshTokensGateway: refreshTokensGateway
                 )
             )
         )
@@ -80,5 +82,9 @@ public final class InfrastructureFactory {
     
     public func makeNetwork() -> Network {
         network
+    }
+    
+    public func makeTokensStorage() -> Storage {
+        userDefaultsStorage
     }
 }
