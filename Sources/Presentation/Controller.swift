@@ -28,9 +28,7 @@ public class BaseController<View: UIView & StateDriven>: UIViewController, UserI
                 return
             }
             
-            DispatchQueue.main.async {
-                self.typedView.render(self.state)
-            }
+            typedView.render(state)
         }
     }
     

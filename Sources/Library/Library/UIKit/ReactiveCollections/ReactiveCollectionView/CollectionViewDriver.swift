@@ -22,67 +22,85 @@ public class CollectionViewDriver<SectionIDType: Hashable> {
     public init(
         collectionView: UICollectionView,
         collectionViewModel: CollectionViewModel<SectionIDType> = .init(sectionModels: []),
-        diffingQueue: DispatchQueue = .global(qos: .userInteractive)
+        diffingQoS qos: DispatchQoS = .userInteractive
     ) {
         self.collectionView = collectionView
         self.collectionViewModel = collectionViewModel
-        self.diffingQueue = diffingQueue
+        self.diffingQueue = DispatchQueue(label: "CollectionViewDriver.diffingQueue", qos: qos, attributes: .concurrent)
         
         dataSource = .init(
             collectionView: collectionView
         ) { [weak self] collectionView, indexPath, id in
-            self?.collectionViewModel[ifExists: indexPath].map {
+            guard let self = self else { return nil }
+            
+            let copy = self.diffingQueue.sync {
+                self.collectionViewModel
+            }
+            
+            let cell = copy[ifExists: indexPath].map {
                 collectionView.configuredCell(for: $0, at: indexPath)
             }
+            
+            return cell
         }
         
         dataSource.supplementaryViewProvider = { [weak self] collectionView, kind, indexPath in
-            let section = indexPath.section
-            let elementKind = SupplementaryViewKind(collectionElementKindString: kind)
-            let view: UICollectionReusableView
+            guard let self = self else { return nil }
             
-            if let elementKind = elementKind,
-                let sectionModel = self?.collectionViewModel[ifExists: section],
-                let viewModel = elementKind == .header ? sectionModel.headerViewModel : sectionModel.footerViewModel,
-                let identifier = viewModel.viewInfo?.registrationInfo.reuseIdentifier {
-                view = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: identifier, for: indexPath)
-                
-                viewModel.apply(to: view)
-                
-                view.accessibilityIdentifier = viewModel.viewInfo?.accessibilityFormat.accessibilityIdentifier(for: section)
-            } else {
-                view = UICollectionReusableView()
+            let copy = self.diffingQueue.sync {
+                self.collectionViewModel
             }
+            
+            let section = indexPath.section
+            
+            guard
+                let elementKind = SupplementaryViewKind(collectionElementKindString: kind),
+                let sectionModel = copy[ifExists: section],
+                let viewModel = elementKind == .header ? sectionModel.headerViewModel : sectionModel.footerViewModel,
+                let identifier = viewModel.viewInfo?.registrationInfo.reuseIdentifier
+            else {
+                return nil
+            }
+            
+            let view = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: identifier, for: indexPath)
+            
+            viewModel.apply(to: view)
+            
+            view.accessibilityIdentifier = viewModel.viewInfo?.accessibilityFormat.accessibilityIdentifier(for: section)
             
             return view
         }
     }
-    
-    private let lock = NSRecursiveLock()
     
     public func update(
         collectionViewModel: CollectionViewModel<SectionIDType>,
         animated: Bool = true,
         completion: (() -> Void)? = nil
     ) {
-        self.collectionViewModel = collectionViewModel
-        
-        collectionView.registerViews(for: self.collectionViewModel)
-        
-        diffingQueue.async { [weak self] in
-            guard let self = self else { return }
+        diffingQueue.async(flags: .barrier) {
+            self.collectionViewModel = collectionViewModel
             
-            var snapshot = NSDiffableDataSourceSnapshot<SectionIDType, ItemIDType>()
-            
-            snapshot.appendSections(self.collectionViewModel.sectionModels.map { $0.id })
-            
-            for section in self.collectionViewModel.sectionModels {
-                let ids = section.cellViewModels.map { $0.id }
+            DispatchQueue.main.async {
+                let copy = self.diffingQueue.sync {
+                    self.collectionViewModel
+                }
                 
-                snapshot.appendItems(ids, toSection: section.id)
+                self.collectionView.registerViews(for: copy)
+                
+                self.diffingQueue.async {
+                    var snapshot = NSDiffableDataSourceSnapshot<SectionIDType, ItemIDType>()
+                    
+                    snapshot.appendSections(self.collectionViewModel.sectionModels.map { $0.id })
+                    
+                    for section in self.collectionViewModel.sectionModels {
+                        let ids = section.cellViewModels.map { $0.id }
+                        
+                        snapshot.appendItems(ids, toSection: section.id)
+                    }
+                    
+                    self.dataSource.apply(snapshot, animatingDifferences: animated, completion: completion)
+                }
             }
-            
-            self.dataSource.apply(snapshot, animatingDifferences: animated, completion: completion)
         }
     }
 }
