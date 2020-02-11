@@ -103,6 +103,7 @@ targets:
       - target: Domain
       - target: Library
       - carthage: RouteComposer
+      - carthage: Stevia
       - carthage: Overture
     settings:
       base:

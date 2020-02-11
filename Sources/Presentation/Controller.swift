@@ -28,7 +28,9 @@ public class BaseController<View: UIView & StateDriven>: UIViewController, UserI
                 return
             }
             
-            typedView.render(state)
+            DispatchQueue.main.async {
+                self.typedView.render(self.state)
+            }
         }
     }
     
@@ -64,6 +66,8 @@ public class BaseController<View: UIView & StateDriven>: UIViewController, UserI
     
     override public func viewDidLoad() {
         super.viewDidLoad()
+        
+        typedView.render(state)
         
         makeSubscriptions().store(in: &bag)
     }

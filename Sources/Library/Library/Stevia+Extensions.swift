@@ -21,28 +21,28 @@ extension UIView {
     }
     
     @discardableResult
-    public func top(toSafeAreaOf view: UIView, _ const: CGFloat) -> Self {
+    public func top(toSafeAreaOf view: UIView, _ const: CGFloat = 0) -> Self {
         Top == view.safeAreaLayoutGuide.Top + const
         
         return self
     }
     
     @discardableResult
-    public func left(toSafeAreaOf view: UIView, _ const: CGFloat) -> Self {
+    public func left(toSafeAreaOf view: UIView, _ const: CGFloat = 0) -> Self {
         Left == view.safeAreaLayoutGuide.Left + const
         
         return self
     }
     
     @discardableResult
-    public func right(toSafeAreaOf view: UIView, _ const: CGFloat) -> Self {
+    public func right(toSafeAreaOf view: UIView, _ const: CGFloat = 0) -> Self {
         Right == view.safeAreaLayoutGuide.Right + const
         
         return self
     }
     
     @discardableResult
-    public func bottom(toSafeAreaOf view: UIView, _ const: CGFloat) -> Self {
+    public func bottom(toSafeAreaOf view: UIView, _ const: CGFloat = 0) -> Self {
         Bottom == view.safeAreaLayoutGuide.Bottom + const
         
         return self
