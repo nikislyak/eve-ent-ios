@@ -9,8 +9,8 @@ import Foundation
 import UIKit
 
 public struct ScreensFactories {
-    let authFactory: AuthFactory
-    let mainFactory: MainFactory
+    public let authFactory: AuthFactory
+    public let mainFactory: MainFactory
     
     public init(
         authFactory: AuthFactory,

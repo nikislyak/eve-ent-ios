@@ -9,7 +9,6 @@
 import Foundation
 import CoreData
 import KeychainAccess
-import RouteComposer
 import Library
 import CoreDataKit
 import Networking
@@ -25,14 +24,6 @@ public final class InfrastructureFactory {
     private lazy var keychain = Keychain()
     private lazy var keychainStorage = KeychainStorage(keychain: keychain, decoder: decoder, encoder: encoder)
     private lazy var userDefaultsStorage = UserDefaultsStorage(userDefaults: .standard, decoder: decoder, encoder: encoder)
-    
-    private lazy var router: Router = {
-        var router = DefaultRouter()
-        
-        router.add(NavigationDelayingInterceptor())
-        
-        return router
-    }()
     
     private lazy var network = Network(
         env: Network.Environment(
@@ -74,10 +65,6 @@ public final class InfrastructureFactory {
     
     public func makeCoreDataGateway() -> CoreDataGateway {
         coreDataGateway
-    }
-    
-    public func makeRouter() -> Router {
-        router
     }
     
     public func makeNetwork() -> Network {

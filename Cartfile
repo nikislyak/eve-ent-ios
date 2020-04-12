@@ -1,5 +1,4 @@
 github "freshOS/Stevia" == 4.7.3
-github "ekazaev/route-composer" ~> 2.5.1
 github "pointfreeco/swift-overture" ~> 0.5.0
 github "kishikawakatsumi/KeychainAccess" ~> 4.1.0
 github "SDWebImage/SDWebImage" ~> 5.5.1

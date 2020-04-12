@@ -10,8 +10,8 @@ import Stevia
 import Overture
 import Library
 
-fileprivate func preparePlaceholder(text: String) -> NSAttributedString {
-    return NSAttributedString(
+private func preparePlaceholder(text: String) -> NSAttributedString {
+    .init(
         string: text,
         attributes: [.foregroundColor : UIColor.lightGray]
     )
@@ -107,7 +107,7 @@ public class AuthView: UIView {
         sv(layersView, scrollView)
         
         scrollView.sv(
-            stackView.arranged(
+            stackView.with(
                 blockView,
                 loginBtn
             )
@@ -155,7 +155,7 @@ public class AuthView: UIView {
 }
 
 extension AuthView: StateDriven {
-    public struct State: EmptyInitializable {
+    public struct State: EmptyInitializable, Equatable {
         var email = ""
         var password = ""
         

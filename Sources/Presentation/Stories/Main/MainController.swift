@@ -20,8 +20,14 @@ public class MainController: BaseController<MainRootView> {
         
         navigationItem.rightBarButtonItem = .init(barButtonSystemItem: .close, target: self, action: #selector(close))
     }
-    
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        typedView.didLayout()
+    }
+
     @objc func close() {
-        router.navigate(to: .auth)
+        context.navigateToAuth()
     }
 }

@@ -22,6 +22,6 @@ open class BaseCollectionViewCell: UICollectionViewCell {
     }
     
     open func setup() {
-        backgroundColor = .white
+        contentView.backgroundColor = .white
     }
 }

@@ -1,5 +1,4 @@
-github "SDWebImage/SDWebImage" "5.5.2"
-github "ekazaev/route-composer" "2.5.2"
+github "SDWebImage/SDWebImage" "5.7.2"
 github "freshOS/Stevia" "4.7.3"
 github "kishikawakatsumi/KeychainAccess" "v4.1.0"
 github "nikislyak/CoreDataKit" "a687e5d145a754d77f00050b2ceac64cef681957"

@@ -9,7 +9,7 @@ import Foundation
 import UIKit
 
 public struct CollectionViewModel<SectionIDType: Hashable> {
-    public let sectionModels: [CollectionSectionViewModel<SectionIDType>]
+    public var sectionModels: [CollectionSectionViewModel<SectionIDType>]
     
     public var isEmpty: Bool {
         return sectionModels.allSatisfy { $0.isEmpty }

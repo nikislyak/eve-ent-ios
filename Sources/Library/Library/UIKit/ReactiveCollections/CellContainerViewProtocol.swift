@@ -25,9 +25,7 @@ protocol CellContainerViewProtocol {
 
 extension CellContainerViewProtocol {
     func register(cellViewModels: [ReusableCellViewModelProtocol]) {
-        cellViewModels.forEach {
-            register(cellViewModel: $0)
-        }
+        cellViewModels.forEach(register)
     }
     
     func register(cellViewModel model: ReusableCellViewModelProtocol) {

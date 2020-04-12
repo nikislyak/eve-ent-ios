@@ -13,7 +13,7 @@ import Domain
 import Presentation
 import Validation
 
-class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     
     private lazy var coreDataFactory = CoreDataFactoryImpl()
@@ -29,32 +29,30 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         authFactory: authFactory,
         mainFactory: mainFactory
     )
-    
-    private lazy var screenConfigurationsFactory = ScreenConfigurationsFactoryImpl(screensFactories)
-    
-    private lazy var router: RouterAbstraction = RouterAbstractionImpl(router: infrastructureFactory.makeRouter()) { [unowned self] in
-        self.screenConfigurationsFactory
-    }
+
+    private lazy var applicationContext = ApplicationContext(
+        useCasesFactory: useCasesFactory,
+        validatorsFactory: validatorsFactory,
+        screensFactories: { [unowned self] in self.screensFactories }
+    )
     
     private func makeFactory<S: UserInterfaceModule, F: BaseScreenFactory<S>>() -> F {
-        .init(
-            useCasesFactory: useCasesFactory,
-            validatorsFactory: validatorsFactory,
-            router: router
-        )
+        .init(context: applicationContext)
     }
     
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+    func scene(
+        _ scene: UIScene,
+        willConnectTo session: UISceneSession,
+        options connectionOptions: UIScene.ConnectionOptions
+    ) {
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
             
             self.window = window
             
-            self.window?.rootViewController = .init()
+            applicationContext.window = window
             
             window.makeKeyAndVisible()
-            
-            router.navigate(to: .auth)
         }
     }
 }

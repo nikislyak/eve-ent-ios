@@ -9,11 +9,11 @@ import Foundation
 import UIKit
 
 public struct CollectionSectionViewModel<SectionIDType: Hashable> {
-    let cellViewModels: [CollectionCellViewModel]
+    public var cellViewModels: [CollectionCellViewModel]
     
-    let headerViewModel: CollectionSupplementaryViewModel?
+    public var headerViewModel: CollectionSupplementaryViewModel?
     
-    let footerViewModel: CollectionSupplementaryViewModel?
+    public var footerViewModel: CollectionSupplementaryViewModel?
     
     public var id: SectionIDType
     

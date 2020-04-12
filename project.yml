@@ -3,7 +3,7 @@ name: Eve-Ent
 options:
   bundleIdPrefix: com.nikislyak.Eve-Ent
   deploymentTarget:
-    iOS: "13.2"
+    iOS: "13.4"
   transitivelyLinkDependencies: true
   developmentLanguage: en
   createIntermediateGroups: true
@@ -33,7 +33,6 @@ targets:
       - carthage: KeychainAccess
       - carthage: SDWebImage
       - carthage: Stevia
-      - carthage: RouteComposer
       - sdk: CoreData.framework
     scheme:
       testTargets:
@@ -78,7 +77,6 @@ targets:
       - carthage: CoreDataKit
       - carthage: Overture
       - carthage: KeychainAccess
-      - carthage: RouteComposer
       - sdk: CoreData.framework
     
   Library:
@@ -102,7 +100,6 @@ targets:
     dependencies:
       - target: Domain
       - target: Library
-      - carthage: RouteComposer
       - carthage: Stevia
       - carthage: Overture
     settings:

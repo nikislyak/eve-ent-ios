@@ -10,15 +10,15 @@ import UIKit
 
 extension UIStackView {
     @discardableResult
-    public func arranged(_ views: UIView...) -> Self {
-        views.forEach { self.addArrangedSubview($0) }
+    public func with(_ views: UIView...) -> Self {
+        views.forEach(addArrangedSubview)
         
         return self
     }
 
     @discardableResult
-    public func arranged(_ views: [UIView]) -> Self {
-        views.forEach { self.addArrangedSubview($0) }
+    public func with(_ views: [UIView]) -> Self {
+        views.forEach(addArrangedSubview)
         
         return self
     }

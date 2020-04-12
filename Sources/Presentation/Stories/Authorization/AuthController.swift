@@ -11,29 +11,11 @@ import Combine
 import Library
 import Domain
 
-public class AuthController: BaseController<AuthView>, KeyboardManagable {
-    override class var keyboardManagerClass: KeyboardManager.Type {
-        SafeAreaAdjustingKeyboardManager.self
-    }
-    
-    public var managedScrollView: UIScrollView {
-        typedView.scrollView
-    }
-    
-    public var mostBottomView: UIView? {
-        return typedView.activeTextInput
-    }
-    
+public class AuthController: BaseController<AuthView> {
     override public func viewDidLoad() {
         super.viewDidLoad()
         
         typedView.loginBtn.view.addTarget(self, action: #selector(signIn), for: .touchUpInside)
-    }
-    
-    override func setup() {
-        super.setup()
-        
-        keyboardManager.viewController = self
     }
     
     @objc func signIn() {
@@ -42,21 +24,23 @@ public class AuthController: BaseController<AuthView>, KeyboardManagable {
             password: typedView?.blockView.view.passwordTextField.text ?? ""
         )
         
-        Just(creds)
-            .receive(on: DispatchQueue.global(qos: .userInteractive))
-            .tryMap { [validatorsFactory] creds -> Credentials in
-                let violations = validatorsFactory
-                    .makeAuthValidator()
-                    .validate(credentials: creds)
-                
-                if let violations = violations {
-                    throw AuthValidationError(violations: violations)
-                }
-                
-                return creds
+        async { [context] in
+            Just(creds)
+                .receive(on: DispatchQueue.global(qos: .userInteractive))
+                .tryMap { [context] creds -> Credentials in
+                    let violations = context
+                        .validatorsFactory
+                        .makeAuthValidator()
+                        .validate(credentials: creds)
+                    
+                    if let violations = violations {
+                        throw AuthValidationError(violations: violations)
+                    }
+                    
+                    return creds
             }
-            .flatMap(useCasesFactory.makeAuthorizationUseCase().perform)
-            .receive(on: DispatchQueue.main)
+            .flatMap(context.useCasesFactory.makeAuthorizationUseCase().perform)
+            .receive(on: RunLoop.main)
             .sink(
                 receiveCompletion: { [weak self] completion in
                     self.map { strongSelf in
@@ -68,12 +52,12 @@ public class AuthController: BaseController<AuthView>, KeyboardManagable {
                 },
                 receiveValue: {}
             )
-            .store(in: &bag)
+        }
     }
     
     private func handle(validationError: AuthValidationError) {
         alert(style: .alert)
-            .action(title: "OK", style: .default) { _ in self.router.navigate(to: .main) }
+            .action(title: "OK", style: .default) { [context] _ in context.navigateToMain() }
             .set(\.title, "Incorrect input")
             .set(\.message, validationError.localizedDescription)
             .show() as Void

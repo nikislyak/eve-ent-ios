@@ -10,25 +10,17 @@ import UIKit
 import Domain
 
 public protocol UserInterfaceModule: UIViewController {
-    init(useCasesFactory: UseCasesFactory, validatorsFactory: ValidatorsFactory, router: RouterAbstraction)
+    init(context: ApplicationContext)
 }
 
 public class BaseScreenFactory<S: UserInterfaceModule> {
-    let useCasesFactory: UseCasesFactory
-    let validatorsFactory: ValidatorsFactory
-    let router: RouterAbstraction
+    public let context: ApplicationContext
     
-    public required init(
-        useCasesFactory: UseCasesFactory,
-        validatorsFactory: ValidatorsFactory,
-        router: RouterAbstraction
-    ) {
-        self.useCasesFactory = useCasesFactory
-        self.validatorsFactory = validatorsFactory
-        self.router = router
+    public required init(context: ApplicationContext) {
+        self.context = context
     }
     
     public func makeScreen() -> S {
-        S(useCasesFactory: useCasesFactory, validatorsFactory: validatorsFactory, router: router)
+        S(context: context)
     }
 }

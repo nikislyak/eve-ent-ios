@@ -17,34 +17,21 @@ public protocol StateDriven: class {
     func render(_ state: State)
 }
 
-public class BaseController<View: UIView & StateDriven>: UIViewController, UserInterfaceModule where View.State: EmptyInitializable {
-    let useCasesFactory: UseCasesFactory
-    let router: RouterAbstraction
-    let validatorsFactory: ValidatorsFactory
+
+
+public class BaseController<View: UIView & StateDriven>: UIViewController, UserInterfaceModule
+where View.State: EmptyInitializable, View.State: Equatable {
+    let context: ApplicationContext
     
-    var state: View.State = .init() {
-        didSet {
-            guard typedView != nil else {
-                return
-            }
-            
-            typedView.render(state)
-        }
-    }
+    @Published var state = View.State()
     
     var bag = Set<AnyCancellable>()
     
-    public required init(
-        useCasesFactory: UseCasesFactory,
-        validatorsFactory: ValidatorsFactory,
-        router: RouterAbstraction
-    ) {
-        self.useCasesFactory = useCasesFactory
-        self.validatorsFactory = validatorsFactory
-        self.router = router
-        
+    public required init(context: ApplicationContext) {
+        self.context = context
+
         super.init(nibName: nil, bundle: nil)
-        
+
         setup()
     }
     
@@ -64,8 +51,13 @@ public class BaseController<View: UIView & StateDriven>: UIViewController, UserI
     
     override public func viewDidLoad() {
         super.viewDidLoad()
-        
-        typedView.render(state)
+
+//        $state
+        _state
+            .projectedValue
+            .removeDuplicates()
+            .sink(receiveValue: typedView.render)
+            .store(in: &bag)
         
         makeSubscriptions().store(in: &bag)
     }
@@ -75,10 +67,7 @@ public class BaseController<View: UIView & StateDriven>: UIViewController, UserI
         []
     }
     
-    /// Override point
-    class var keyboardManagerClass: KeyboardManager.Type {
-        ScrollViewInsetAdjustingKeyboardManager.self
+    func async(_ subscribe: () -> Cancellable) {
+        subscribe().store(in: &bag)
     }
-    
-    private(set) lazy var keyboardManager = type(of: self).keyboardManagerClass.init()
 }

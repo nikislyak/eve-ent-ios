@@ -71,6 +71,13 @@ public class CollectionViewDriver<SectionIDType: Hashable> {
             return view
         }
     }
+
+    public func updateWithSameCollectionViewModel(
+        animated: Bool = true,
+        completion: (() -> Void)? = nil
+    ) {
+        update(collectionViewModel: collectionViewModel, animated: animated, completion: completion)
+    }
     
     public func update(
         collectionViewModel: CollectionViewModel<SectionIDType>,
