@@ -9,6 +9,7 @@ import Foundation
 import UIKit
 import Domain
 import Combine
+import Library
 
 public final class ApplicationContext {
     private var bag = Set<AnyCancellable>()
@@ -34,10 +35,15 @@ public final class ApplicationContext {
         self.screensFactories = screensFactories
     }
 
+    private lazy var flowSwitcherViewController = FlowSwitcherViewController(placeholderViewController: .init())
+
     private func launchApp() {
+        window?.rootViewController = flowSwitcherViewController
+
         useCasesFactory
             .makeAuthorizationUseCase()
             .state()
+            .receive(on: RunLoop.main)
             .sink(
                 receiveCompletion: { _ in }
             ) { [unowned self] in
@@ -50,28 +56,29 @@ public final class ApplicationContext {
             .store(in: &bag)
     }
 
-    private weak var authController: AuthController?
-    private weak var tabBarController: UITabBarController?
-    private weak var mainNavigationController: UINavigationController?
-    private weak var mainController: MainController?
+    private let authController = WeakOwned<AuthController>()
+    private let tabBarController = WeakOwned<UITabBarController>()
+    private let mainNavigationController = WeakOwned<UINavigationController>()
+    private let mainController = WeakOwned<MainController>()
 
     public func navigateToMain() {
-        defer {
-            tabBarController?.selectedViewController = mainNavigationController!
-        }
+        guard flowSwitcherViewController.previousVisibleVC == tabBarController.value else {
+            flowSwitcherViewController.replace(with: setupTabBarController()) {
+                self.tabBarController.value?.selectedViewController = self.mainNavigationController.value
+            }
 
-        guard window?.rootViewController == tabBarController else {
-            window?.rootViewController = setupTabBarController()
             return
         }
+
+        tabBarController.value?.selectedViewController = mainNavigationController.value
     }
 
     public func navigateToAuth() {
-        window?.rootViewController = get(\.authController, using: screensFactories().authFactory.makeScreen)
+        flowSwitcherViewController.replace(with: authController.get(or: screensFactories().authFactory.makeScreen()))
     }
 
     private func setupTabBarController() -> UITabBarController {
-        let tabBarController = get(\.tabBarController, using: UITabBarController.init)
+        let tabBarController = self.tabBarController.get(or: .init())
 
         guard let controllers = tabBarController.viewControllers, !controllers.isEmpty else {
             tabBarController.setViewControllers([setupMainNavigationController()], animated: false)
@@ -83,9 +90,9 @@ public final class ApplicationContext {
     }
 
     private func setupMainNavigationController() -> UINavigationController {
-        let mainController = get(\.mainController, using: screensFactories().mainFactory.makeScreen)
+        let mainController = self.mainController.get(or: screensFactories().mainFactory.makeScreen())
 
-        let mainNavigationController = get(\.mainNavigationController, using: UINavigationController.init)
+        let mainNavigationController = self.mainNavigationController.get(or: .init())
 
         if mainNavigationController.viewControllers.isEmpty {
             mainNavigationController.setViewControllers([mainController], animated: false)

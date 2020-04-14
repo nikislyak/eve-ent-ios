@@ -17,8 +17,6 @@ public protocol StateDriven: class {
     func render(_ state: State)
 }
 
-
-
 public class BaseController<View: UIView & StateDriven>: UIViewController, UserInterfaceModule
 where View.State: EmptyInitializable, View.State: Equatable {
     let context: ApplicationContext
