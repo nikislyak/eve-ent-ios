@@ -57,7 +57,7 @@ public class AuthController: BaseController<AuthView> {
     
     private func handle(validationError: AuthValidationError) {
         alert(style: .alert)
-            .action(title: "OK", style: .default) { [context] _ in context.navigateToMain() }
+			.action(title: "OK", style: .default) { [context] _ in context.router.navigateToMain() }
             .set(\.title, "Incorrect input")
             .set(\.message, validationError.localizedDescription)
             .show() as Void

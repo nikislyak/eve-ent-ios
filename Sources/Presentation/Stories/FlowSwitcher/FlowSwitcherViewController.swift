@@ -9,10 +9,10 @@ import Foundation
 import UIKit
 import Stevia
 
-final class FlowSwitcherViewController: UIViewController {
+public final class FlowSwitcherViewController: UIViewController {
     private let placeholderViewController: UIViewController
 
-    init(
+    public init(
         placeholderViewController: UIViewController
     ) {
         self.placeholderViewController = placeholderViewController
@@ -22,13 +22,13 @@ final class FlowSwitcherViewController: UIViewController {
         embed(placeholderViewController)
     }
 
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError()
     }
 
-    private(set) var previousVisibleVC: UIViewController?
+    public private(set) var previousVisibleVC: UIViewController?
 
-    func replace(with vc: UIViewController, completion: (() -> Void)? = nil) {
+    public func replace(with vc: UIViewController, completion: (() -> Void)? = nil) {
         let oldVC: UIViewController
 
         if let previousVisibleVC = previousVisibleVC {
@@ -76,21 +76,11 @@ final class FlowSwitcherViewController: UIViewController {
     }
 }
 
-extension UIViewController {
+private extension UIViewController {
     func embed(_ vc: UIViewController) {
         addChild(vc)
         view.sv(vc.view)
         vc.view.fillContainer()
         vc.didMove(toParent: self)
-    }
-}
-
-class FlowSwitcherTransitioning: NSObject, UIViewControllerAnimatedTransitioning {
-    func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
-        0.3
-    }
-
-    func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
-
     }
 }

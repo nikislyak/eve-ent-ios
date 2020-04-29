@@ -8,15 +8,18 @@
 import Foundation
 import UIKit
 
-public struct ScreensFactories {
+public class ScreensFactories {
     public let authFactory: AuthFactory
     public let mainFactory: MainFactory
+	public let cameraFactory: CameraFactory
     
     public init(
         authFactory: AuthFactory,
-        mainFactory: MainFactory
+        mainFactory: MainFactory,
+		cameraFactory: CameraFactory
     ) {
         self.authFactory = authFactory
         self.mainFactory = mainFactory
+		self.cameraFactory = cameraFactory
     }
 }
