@@ -13,12 +13,20 @@ public protocol Draggable: UIView {
     var protrusion: CGFloat { get }
 }
 
+public protocol DraggableViewViewControllerDelegate: class {
+	func didExpand()
+	func didCollapse()
+}
+
 public class DraggableViewViewController<DraggableView: Draggable>: UIViewController, UIScrollViewDelegate {
     public let draggableView: DraggableView
+
     public let scrollView = OverlayScrollView()
 		|> \.showsVerticalScrollIndicator .~ false
 		|> \.showsHorizontalScrollIndicator .~ false
 		|> \.bounces .~ false
+
+	public weak var delegate: DraggableViewViewControllerDelegate?
 
     public init(draggableView: DraggableView) {
         self.draggableView = draggableView
@@ -53,8 +61,14 @@ public class DraggableViewViewController<DraggableView: Draggable>: UIViewContro
         super.viewDidLayoutSubviews()
 
         DispatchQueue.main.async {
-            self.scrollView.contentOffset.y = -self.scrollView.totalDistance(including: self.draggableView.protrusion)
-            self.scrollView.contentInset.top = self.scrollView.totalDistance(including: self.draggableView.protrusion)
+			let offset = self.scrollView.totalDistance(excluding: self.draggableView.protrusion)
+			let bottomInset = self.scrollView.safeAreaInsets.bottom
+
+            self.scrollView.contentOffset.y = -offset
+            self.scrollView.contentInset.top = offset
+			self.scrollView.contentInset.bottom = -bottomInset
+
+			self.delegate?.didCollapse()
         }
     }
 
@@ -67,7 +81,7 @@ public class DraggableViewViewController<DraggableView: Draggable>: UIViewContro
     private var scrollDirection: ScrollDirection?
     private var previousYOffset: CGFloat?
 
-    private func animate(_ animations: @escaping () -> Void) {
+	private func animate(_ animations: @escaping () -> Void, completion: (() -> Void)? = nil) {
         UIView.animate(
             withDuration: 0.5,
             delay: 0,
@@ -75,57 +89,60 @@ public class DraggableViewViewController<DraggableView: Draggable>: UIViewContro
             initialSpringVelocity: 1,
             options: [.curveEaseOut, .beginFromCurrentState, .allowUserInteraction],
             animations: animations,
-            completion: nil
+			completion: {
+				guard $0 else { return }
+				completion?()
+			}
         )
     }
 
-    public func setExpanded() {
-        animate {
+    public func setExpanded(completion: (() -> Void)? = nil) {
+        animate({
             self.scrollView.setContentOffset(
                 .init(
                     x: 0,
-                    y: -abs(self.scrollView.frame.height - self.draggableView.frame.height)
+                    y: -max(self.scrollView.frame.height - self.draggableView.frame.height, 0)
                 ),
                 animated: false
             )
-        }
+		}, completion: completion)
     }
 
-    public func setCollapsed() {
-        animate {
+    public func setCollapsed(completion: (() -> Void)? = nil) {
+        animate({
             self.scrollView.setContentOffset(
-                .init(x: 0, y: -self.scrollView.totalDistance(including: self.draggableView.protrusion)),
+                .init(x: 0, y: -self.scrollView.totalDistance(excluding: self.draggableView.protrusion)),
                 animated: false
             )
-        }
+        }, completion: completion)
     }
 
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
         defer {
-            previousYOffset = self.scrollView.yOffset
+            previousYOffset = scrollView.yOffset
         }
 
-        self.scrollView.backgroundColor = UIColor
+        scrollView.backgroundColor = UIColor
             .black
-            .withAlphaComponent(0.4 * self.scrollView.expandFraction(including: draggableView.protrusion))
+            .withAlphaComponent(0.4 * scrollView.expandFraction(excluding: draggableView.protrusion))
 
         guard let previousY = previousYOffset else { return }
 
-        scrollDirection = self.scrollView.yOffset > previousY ? .down : .up
+        scrollDirection = scrollView.yOffset > previousY ? .down : .up
     }
 
 	private func expandOrCollapse(yOffset: CGFloat) {
         let multiplier: CGFloat = scrollDirection == .up ? 0.8 : 0.2
 
-        if yOffset < multiplier * self.scrollView.totalDistance(including: draggableView.protrusion) {
-            setExpanded()
+        if yOffset < multiplier * scrollView.totalDistance(excluding: draggableView.protrusion) {
+			setExpanded { [weak delegate] in delegate?.didExpand() }
         } else {
-            setCollapsed()
+			setCollapsed { [weak delegate] in delegate?.didCollapse() }
         }
     }
 
     public func scrollViewWillBeginDecelerating(_ scrollView: UIScrollView) {
-		expandOrCollapse(yOffset: self.scrollView.yOffset)
+		expandOrCollapse(yOffset: scrollView.yOffset)
     }
 
     public func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {}
@@ -133,7 +150,7 @@ public class DraggableViewViewController<DraggableView: Draggable>: UIViewContro
     public func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
         guard !decelerate else { return }
 
-		expandOrCollapse(yOffset: self.scrollView.yOffset)
+		expandOrCollapse(yOffset: scrollView.yOffset)
     }
 
 	public func scrollViewWillEndDragging(
@@ -151,19 +168,27 @@ private enum ScrollDirection {
 }
 
 private extension UIScrollView {
-    func totalDistance(including protrusion: CGFloat) -> CGFloat {
-		frame.height - safeAreaInsets.bottom - protrusion
+	var totalVerticalInsetsHeight: CGFloat {
+		safeAreaInsets.top + safeAreaInsets.bottom
+	}
+
+	var totalDistance: CGFloat {
+		frame.height - totalVerticalInsetsHeight
+	}
+
+    func totalDistance(excluding protrusion: CGFloat) -> CGFloat {
+		totalDistance - protrusion
     }
 
     var yOffset: CGFloat {
         abs(contentOffset.y)
     }
 
-    func collapseFraction(including protrusion: CGFloat) -> CGFloat {
-        yOffset / totalDistance(including: protrusion)
+    func collapseFraction(excluding protrusion: CGFloat) -> CGFloat {
+        yOffset / totalDistance(excluding: protrusion)
     }
 
-    func expandFraction(including protrusion: CGFloat) -> CGFloat {
-        1 - collapseFraction(including: protrusion)
+    func expandFraction(excluding protrusion: CGFloat) -> CGFloat {
+        1 - collapseFraction(excluding: protrusion)
     }
 }

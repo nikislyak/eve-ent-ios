@@ -7,44 +7,11 @@
 //
 
 import UIKit
-import Combine
-import Data
-import Domain
-import Presentation
-import Validation
 
 final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
 
-	private lazy var coreDataFactory = CoreDataFactoryImpl()
-	private lazy var infrastructureFactory = InfrastructureFactory(coreDataFactory: coreDataFactory)
-	private lazy var gatewaysFactory = GatewaysFactoryImpl(infrastructureFactory)
-	private lazy var useCasesFactory = UseCasesFactory(gatewaysFactory)
-	private lazy var validatorsFactory = ValidatorsFactoryImpl()
-
-	private lazy var authFactory: AuthFactory = makeFactory()
-	private lazy var mainFactory: MainFactory = makeFactory()
-	private lazy var cameraFactory: CameraFactory = makeFactory()
-
-	private lazy var screensFactories = ScreensFactories(
-		authFactory: authFactory,
-		mainFactory: mainFactory,
-		cameraFactory: cameraFactory
-	)
-
-	private lazy var router = ApplicationRouter { [unowned self] in
-		self.screensFactories
-	}
-
-	private lazy var applicationContext = ApplicationContext(
-		useCasesFactory: useCasesFactory,
-		validatorsFactory: validatorsFactory,
-		router: router
-	)
-
-	private func makeFactory<S: UserInterfaceModule, F: BaseScreenFactory<S>>() -> F {
-		.init(context: applicationContext)
-	}
+	private lazy var applicationContext = Dependencies.applicationContext
 
     func scene(
         _ scene: UIScene,
@@ -90,10 +57,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 	) {
 		switch shortcutItem.type {
 		case "camera":
-			router.navigateToCamera()
+			applicationContext.router.navigateToCamera()
 			completionHandler?(true)
 		case "main":
-			router.navigateToMain()
+			applicationContext.router.navigateToMain()
 			completionHandler?(true)
 		default:
 			return
